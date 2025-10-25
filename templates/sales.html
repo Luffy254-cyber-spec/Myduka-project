@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Sales{% endblock %}
+{% block content %}
+<h1>Sales</h1>
+<table>
+  <tr>
+    <th>ID</th><th>Product ID</th><th>Quantity</th><th>Date</th>
+  </tr>
+  {% for s in sales %}
+  <tr>
+    <td>{{ s[0] }}</td><td>{{ s[1] }}</td><td>{{ s[2] }}</td><td>{{ s[3] }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Add Sale</h2>
+<form method="post" action="/add_sale">
+  <input type="number" name="pid" placeholder="Product ID" required>
+  <input type="number" name="quantity" placeholder="Quantity" required>
+  <button type="submit">Add Sale</button>
+</form>
+{% endblock %}
