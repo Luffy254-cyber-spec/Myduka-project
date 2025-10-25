@@ -1,0 +1,150 @@
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to bottom right, #f5f6fa, #e0e7ff);
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  color: #333;
+}
+
+/* ----- NAVBAR ----- */
+nav {
+  background-color: #007bff;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+nav a {
+  color: white;
+  margin: 0 15px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+nav a:hover {
+  color: #ffdd57;
+  text-shadow: 0 0 8px #ffdd57, 0 0 15px #ffdd57;
+  background-color: rgba(255, 221, 87, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  animation: heartbeat 1.2s infinite;
+}
+
+/* Neon Heartbeat Glow Animation */
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px #ffdd57, 0 0 20px #ffdd57, 0 0 40px #ffdd57;
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px #ffdd57, 0 0 40px #ffdd57, 0 0 60px #ffdd57;
+  }
+}
+
+/* ----- CONTAINER ----- */
+.container {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  width: 90%;
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ----- TABLES ----- */
+table {
+  margin: 20px auto;
+  border-collapse: collapse;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+}
+
+td {
+  background-color: #f9f9f9;
+}
+
+/* ----- FORMS ----- */
+form {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #eef2ff;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+input {
+  padding: 10px;
+  margin: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 200px;
+}
+
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  background-color: #0056b3;
+  box-shadow: 0 0 10px #007bff, 0 0 20px #007bff;
+  animation: heartbeat 1.2s infinite;
+}
+
+/* ----- FOOTER ----- */
+footer {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: #007bff;
+  color: white;
+  font-size: 14px;
+}
+
+footer a {
+  color: #ffdd57;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+/* Reuse heartbeat animation for buttons too */
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px #ffdd57, 0 0 20px #ffdd57;
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px #ffdd57, 0 0 40px #ffdd57;
+  }
+}

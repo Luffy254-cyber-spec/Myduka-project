@@ -172,10 +172,10 @@ def insert_product(p_values):
      curr.execute(query, p_values)
      conn.commit() 
 
-new_product=('Avocados',50,70)
-# insert_product(new_product)
-products = fetch_data('products')
-print(products)
+# new_product=('Avocados',50,70)
+# # insert_product(new_product)
+# products = fetch_data('products')
+# print(products)
 
 #insert sales
 def insert_sales(values):
@@ -183,10 +183,10 @@ def insert_sales(values):
      curr.execute(query, values)
      conn.commit()
 
-new_sale = (2,5)
-#insert_sales(new_sale)
-sales = fetch_data('sales')
-print(sales)
+# new_sale = (2,5)
+# #insert_sales(new_sale)
+# sales = fetch_data('sales')
+# print(sales)
 
 # insert stock
 def insert_stock(values):
@@ -194,10 +194,10 @@ def insert_stock(values):
     curr.execute(query, values)
     conn.commit()
 
-new_stock = (2, 5)  
-#insert_stock(new_stock)
-stock = fetch_data('stock')
-print(stock)
+# new_stock = (2, 5)  
+# #insert_stock(new_stock)
+# stock = fetch_data('stock')
+# print(stock)
 
 # def insert_products(name, bp, sp):
 #     curr.execute(
