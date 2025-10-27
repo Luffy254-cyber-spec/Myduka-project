@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Stock{% endblock %}
+{% block content %}
+<h1>Stock</h1>
+<table>
+  <tr>
+    <th>ID</th><th>Product ID</th><th>Quantity</th><th>Restock Date</th>
+  </tr>
+  {% for s in stock %}
+  <tr>
+    <td>{{ s[0] }}</td><td>{{ s[1] }}</td><td>{{ s[2] }}</td><td>{{ s[3] }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Add Stock</h2>
+<form method="post" action="/add_stock">
+  <input type="number" name="pid" placeholder="Product ID" required>
+  <input type="number" name="quantity" placeholder="Quantity" required>
+  <button type="submit">Add Stock</button>
+</form>
+{% endblock %}
