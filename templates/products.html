@@ -2,22 +2,54 @@
 {% block title %}Products{% endblock %}
 {% block content %}
 <h1>Products</h1>
-<table>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <!-- Add Product Button on Left -->
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+    Add Product
+  </button>
+
+  <!-- Search Bar on Right -->
+  <form method="get" action="/products" class="d-flex">
+    <input type="text" name="search" placeholder="Search by name..." value="{{ request.args.get('search', '') }}" class="form-control me-2">
+    <button class="btn btn-secondary" type="submit">Search</button>
+  </form>
+</div>
+
+<table class="table table-striped">
   <tr>
     <th>ID</th><th>Name</th><th>Buying Price</th><th>Selling Price</th>
   </tr>
   {% for p in products %}
   <tr>
-    <td>{{ p[0] }}</td><td>{{ p[1] }}</td><td>{{ p[2] }}</td><td>{{ p[3] }}</td>
+    <td>{{ p[0] }}</td>
+    <td>{{ p[1] }}</td>
+    <td>{{ p[2] }}</td>
+    <td>{{ p[3] }}</td>
   </tr>
   {% endfor %}
 </table>
 
-<h2>Add Product</h2>
-<form method="post" action="/add_product">
-  <input type="text" name="name" placeholder="Name" required>
-  <input type="number" name="buying_price" placeholder="Buying price" required>
-  <input type="number" name="selling_price" placeholder="Selling price" required>
-  <button type="submit">Add</button>
-</form>
+<!-- ---------------- Add Product Modal ---------------- -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" action="/add_product">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addProductLabel">Add Product</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input class="form-control mb-2" type="text" name="name" placeholder="Name" required>
+          <input class="form-control mb-2" type="number" name="buying_price" placeholder="Buying Price" required>
+          <input class="form-control mb-2" type="number" name="selling_price" placeholder="Selling Price" required>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Add</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

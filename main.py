@@ -10,24 +10,52 @@ def home():
     return render_template('index.html')
 
 
+# ---------- PRODUCTS ----------
 @app.route('/products')
 def products():
+    search = request.args.get('search', '').strip()
     products = fetch_data('products')
+
+    if search:
+        products = [p for p in products if search.lower() in p[1].lower()]
+
     return render_template('products.html', products=products)
 
 
+# ---------- SALES ----------
 @app.route('/sales')
 def sales():
+    search = request.args.get('search', '').strip()
     sales = fetch_data('sales')
+
+    if search:
+        sales = [
+            s for s in sales
+            if search.lower() in str(s[1]).lower()
+            or search.lower() in str(s[3]).lower()
+        ]
+
     return render_template('sales.html', sales=sales)
 
 
+# ---------- STOCK ----------
 @app.route('/stock')
 def stock():
+    search = request.args.get('search', '').strip()
     stock = fetch_data('stock')
+
+    if search:
+        stock = [
+            s for s in stock
+            if search.lower() in str(s[1]).lower()
+            or search.lower() in str(s[2]).lower()
+            or search.lower() in str(s[3]).lower()
+        ]
+
     return render_template('stock.html', stock=stock)
 
 
+# ---------- PROFIT ----------
 @app.route('/profit')
 def profit():
     profit = product_profit()
@@ -35,7 +63,6 @@ def profit():
 
 
 # ---------- FORM HANDLERS ----------
-
 @app.route('/add_product', methods=['POST'])
 def add_product():
     name = request.form['name']
@@ -61,5 +88,6 @@ def add_stock():
     return redirect('/stock')
 
 
+# ---------- RUN APP ----------
 if __name__ == '__main__':
     app.run(debug=True)

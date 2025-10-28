@@ -1,150 +1,340 @@
-body {
-  font-family: Arial, sans-serif;
-  background: linear-gradient(to bottom right, #f5f6fa, #e0e7ff);
-  margin: 0;
-  padding: 0;
-  text-align: center;
-  color: #333;
-}
-
-/* ----- NAVBAR ----- */
-nav {
-  background-color: #007bff;
-  padding: 15px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-nav a {
+/* ---------------- Navbar ---------------- */
+nav.navbar {
+  background: linear-gradient(90deg, #2575fc, #6a11cb);
   color: white;
-  margin: 0 15px;
-  text-decoration: none;
   font-weight: bold;
-  transition: all 0.3s ease;
-  position: relative;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
-nav a:hover {
-  color: #ffdd57;
-  text-shadow: 0 0 8px #ffdd57, 0 0 15px #ffdd57;
-  background-color: rgba(255, 221, 87, 0.1);
-  padding: 8px 12px;
-  border-radius: 6px;
-  animation: heartbeat 1.2s infinite;
+nav.navbar a.nav-link {
+  color: white !important;
+  margin-right: 15px;
+  transition: all 0.3s;
 }
 
-/* Neon Heartbeat Glow Animation */
-@keyframes heartbeat {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 0 10px #ffdd57, 0 0 20px #ffdd57, 0 0 40px #ffdd57;
-  }
-  50% {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px #ffdd57, 0 0 40px #ffdd57, 0 0 60px #ffdd57;
-  }
-}
-
-/* ----- CONTAINER ----- */
-.container {
-  margin-top: 30px;
-  padding: 20px;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  width: 90%;
-  max-width: 1000px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* ----- TABLES ----- */
-table {
-  margin: 20px auto;
-  border-collapse: collapse;
-  width: 100%;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-th, td {
-  border: 1px solid #ccc;
-  padding: 12px;
-  text-align: left;
-}
-
-th {
-  background-color: #007bff;
-  color: white;
-  font-size: 16px;
-}
-
-td {
-  background-color: #f9f9f9;
-}
-
-/* ----- FORMS ----- */
-form {
-  margin-top: 20px;
-  padding: 15px;
-  background-color: #eef2ff;
-  border-radius: 8px;
-  display: inline-block;
-}
-
-input {
-  padding: 10px;
-  margin: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  width: 200px;
-}
-
-button {
-  padding: 10px 20px;
-  margin: 5px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
-
-button:hover {
-  background-color: #0056b3;
-  box-shadow: 0 0 10px #007bff, 0 0 20px #007bff;
-  animation: heartbeat 1.2s infinite;
-}
-
-/* ----- FOOTER ----- */
-footer {
-  margin-top: 40px;
-  padding: 20px;
-  background-color: #007bff;
-  color: white;
-  font-size: 14px;
-}
-
-footer a {
-  color: #ffdd57;
-  text-decoration: none;
-}
-
-footer a:hover {
+nav.navbar a.nav-link:hover {
+  color: #ffeb3b !important;
   text-decoration: underline;
 }
 
-/* Reuse heartbeat animation for buttons too */
-@keyframes heartbeat {
+/* ---------------- Container ---------------- */
+.container {
+  background: #e3f2fd;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+/* ---------------- Headings ---------------- */
+h1, h2 {
+  color: #1976d2;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ---------------- Tables ---------------- */
+table.table {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table.table th {
+  background: #2196f3;
+  color: white;
+  text-align: center;
+}
+
+table.table td {
+  text-align: center;
+}
+
+/* ---------------- Buttons ---------------- */
+.btn-primary {
+  background: linear-gradient(90deg, #1e88e5, #42a5f5);
+  border: none;
+  transition: all 0.3s;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(90deg, #42a5f5, #1e88e5);
+}
+
+.btn-success {
+  background: linear-gradient(90deg, #00c853, #b2ff59);
+  border: none;
+  color: white;
+}
+
+.btn-success:hover {
+  background: linear-gradient(90deg, #b2ff59, #00c853);
+}
+
+.btn-secondary {
+  background: #ffeb3b;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #fdd835;
+  color: white;
+}
+
+/* ---------------- Inputs ---------------- */
+input.form-control {
+  border-radius: 8px;
+  border: 2px solid #42a5f5;
+  transition: all 0.3s;
+}
+
+input.form-control:focus {
+  border-color: #1e88e5;
+  box-shadow: 0 0 5px rgba(30,136,229,0.5);
+}
+
+/* ---------------- Modals ---------------- */
+.modal-content {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #bbdefb, #e3f2fd);
+}
+
+.modal-header {
+  background: #1e88e5;
+  color: white;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-footer {
+  border-top: none;
+}
+
+/* ---------------- Form placeholders ---------------- */
+::placeholder {
+  color: #1976d2;
+  opacity: 0.7;
+}
+
+/* ---------------- Table hover ---------------- */
+table.table tbody tr:hover {
+  background: #e3f2fd;
+  cursor: pointer;
+}
+
+/* ---------------- Search input ---------------- */
+form input[type="text"] {
+  width: 250px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 2px solid #00c853;
+  margin-right: 10px;
+}
+
+form button {
+  padding: 5px 15px;
+  border-radius: 8px;
+  font-weight: bold;
+  background: #1e88e5;
+  color: white;
+  border: none;
+}
+
+form button:hover {
+  background: #1565c0;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 768px) {
+  nav.navbar a.nav-link {
+    margin-bottom: 8px;
+  }
+
+  form input[type="text"] {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+/* ---------------- Neon Glow Animation ---------------- */
+@keyframes neonPulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 10px #ffdd57, 0 0 20px #ffdd57;
+    box-shadow: 0 0 5px rgba(255,255,255,0.2);
   }
   50% {
-    transform: scale(1.1);
-    box-shadow: 0 0 20px #ffdd57, 0 0 40px #ffdd57;
+    transform: scale(1.05);
+    box-shadow: 0 0 15px rgba(255,255,255,0.8), 0 0 25px rgba(30,136,229,0.6);
   }
+}
+
+/* ---------------- Buttons Neon Glow ---------------- */
+.btn-primary:hover, 
+.btn-success:hover, 
+.btn-secondary:hover {
+  animation: neonPulse 0.6s ease-in-out infinite;
+  text-shadow: 0 0 8px #fff, 0 0 16px #42a5f5, 0 0 24px #1e88e5;
+}
+
+/* ---------------- Table Row Neon Glow ---------------- */
+table.table tbody tr:hover {
+  animation: neonPulse 0.6s ease-in-out infinite;
+  background: #e3f2fd;
+  box-shadow: 0 0 15px rgba(30,136,229,0.6);
+}
+
+/* ---------------- Navbar Neon Glow ---------------- */
+nav.navbar a.nav-link:hover {
+  text-shadow: 0 0 8px #fff, 0 0 16px #42a5f5, 0 0 24px #1e88e5;
+}
+
+/* ---------------- Modal Buttons Neon ---------------- */
+.modal-footer .btn:hover {
+  animation: neonPulse 0.6s ease-in-out infinite;
+  box-shadow: 0 0 10px #fff, 0 0 20px #42a5f5, 0 0 30px #1e88e5;
+}
+
+/* Optional: Neon input focus */
+input.form-control:focus {
+  box-shadow: 0 0 10px #42a5f5, 0 0 20px #1e88e5;
+}
+
+/* ---------------- Navbar Links ---------------- */
+nav.navbar a.nav-link {
+  color: white !important;
+  margin-right: 15px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  display: inline-block;
+}
+
+/* Neon box on hover */
+nav.navbar a.nav-link:hover {
+  background: rgba(30, 136, 229, 0.2); /* light neon background */
+  color: #fffeb3 !important;
+  text-decoration: none;
+
+  /* Glowing box */
+  box-shadow: 0 0 8px #fff, 0 0 16px #42a5f5, 0 0 24px #1e88e5, 0 0 32px #42a5f5;
+  
+  /* Push effect */
+  transform: scale(1.1);
+  z-index: 10; /* keep it on top */
+}
+
+/* Optional: smooth pulse while hovered */
+nav.navbar a.nav-link:hover {
+  animation: neonPulse 0.6s ease-in-out infinite;
+}
+
+/* ---------------- Keyframes ---------------- */
+@keyframes neonPulse {
+  0%, 100% {
+    transform: scale(1.1);
+    box-shadow: 0 0 8px #fff, 0 0 16px #42a5f5, 0 0 24px #1e88e5;
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 12px #fff, 0 0 24px #42a5f5, 0 0 36px #1e88e5, 0 0 48px #1e88e5;
+  }
+}
+
+/* ---------------- Modal Background ---------------- */
+.modal-backdrop.show {
+  background-color: rgba(30, 136, 229, 0.4); /* semi-transparent neon blue */
+}
+
+/* ---------------- Modal Content ---------------- */
+.modal-content {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #bbdefb, #e3f2fd);
+  border: 2px solid #42a5f5;
+  box-shadow: 0 0 15px #42a5f5, 0 0 30px #1e88e5, 0 0 45px #42a5f5;
+  transition: all 0.3s ease-in-out;
+  z-index: 2000;
+  position: relative;
+}
+
+/* ---------------- Modal Hover Pulse ---------------- */
+.modal-content:hover {
+  animation: neonPulseModal 0.6s ease-in-out infinite;
+}
+
+/* ---------------- Keyframes for Modal Pulse ---------------- */
+@keyframes neonPulseModal {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 15px #42a5f5, 0 0 30px #1e88e5, 0 0 45px #42a5f5;
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 25px #42a5f5, 0 0 50px #1e88e5, 0 0 75px #42a5f5;
+  }
+}
+
+/* ---------------- Modal Header ---------------- */
+.modal-header {
+  background: #1e88e5;
+  color: white;
+  border-bottom: none;
+  border-radius: 12px 12px 0 0;
+  text-shadow: 0 0 5px #fff, 0 0 10px #42a5f5;
+}
+
+/* ---------------- Modal Footer ---------------- */
+.modal-footer {
+  border-top: none;
+}
+
+/* ---------------- Modal Buttons ---------------- */
+.modal-footer .btn-primary,
+.modal-footer .btn-success,
+.modal-footer .btn-secondary {
+  transition: all 0.3s;
+}
+
+.modal-footer .btn-primary:hover,
+.modal-footer .btn-success:hover,
+.modal-footer .btn-secondary:hover {
+  animation: neonPulse 0.6s ease-in-out infinite;
+  box-shadow: 0 0 10px #fff, 0 0 20px #42a5f5, 0 0 30px #1e88e5;
+}
+
+/* Table basic styling */
+table {
+  width: 100%;
+  border-collapse: collapse; /* avoid double borders */
+  margin-top: 20px;
+}
+
+/* Table header */
+table th {
+  background-color: #2196f3;
+  color: white;
+  padding: 10px 15px;
+  text-align: left;
+}
+
+/* Table cells */
+table td {
+  padding: 10px 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* Optional: hover effect for rows */
+table tbody tr:hover {
+  background-color: #e3f2fd;
+}
+
+#rainbowBall {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: red;
+  z-index: 9999;
 }
