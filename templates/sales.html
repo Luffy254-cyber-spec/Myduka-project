@@ -32,7 +32,6 @@
     {% for s in sales %}
     <tr>
       <td>{{ s[0] }}</td>
-      <!-- Match pid to product name -->
       <td>
         {% set product = products | selectattr("0", "equalto", s[1]) | list | first %}
         {{ product[1] if product else 'Unknown Product' }}
@@ -46,7 +45,6 @@
 
 <!-- ---------------- Add Sale Modal ---------------- -->
 <div class="modal fade" id="addSaleModal" tabindex="-1" aria-labelledby="addSaleLabel" aria-hidden="true">
-  <!-- Scrollable Modal -->
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content shadow-lg rounded-3">
       <form method="post" action="{{ url_for('add_sale') }}">
@@ -57,11 +55,21 @@
 
         <div class="modal-body">
 
-          <!-- Product Dropdown -->
+          <!-- Hidden Product Dropdown -->
+          <div class="mb-3" style="display: none;">
+            <label for="pid">Choose a product:</label>
+            <select name="pid" id="pid">
+              {% for p in products %}
+              <option value="{{ p[0] }}">{{ p[1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Visible Scrollable Product Dropdown -->
           <div class="mb-3">
-            <label for="pid" class="form-label">Select Product</label>
+            <label for="visible_pid" class="form-label">Select Product</label>
             <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.375rem;">
-              <select name="pid" id="pid" class="form-select border-0" size="5" required>
+              <select id="visible_pid" class="form-select border-0" size="5" required>
                 {% for p in products %}
                 <option value="{{ p[0] }}">{{ p[1] }}</option>
                 {% endfor %}
@@ -74,19 +82,27 @@
             <label for="quantity" class="form-label">Quantity</label>
             <input class="form-control" type="number" name="quantity" id="quantity" placeholder="Enter quantity" required>
           </div>
-
         </div>
 
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Add Sale</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         </div>
-
       </form>
     </div>
   </div>
 </div>
 
+<!-- Script to link visible select with hidden one -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const visibleSelect = document.getElementById("visible_pid");
+    const hiddenSelect = document.getElementById("pid");
 
+    visibleSelect.addEventListener("change", () => {
+      hiddenSelect.value = visibleSelect.value;
+    });
+  });
+</script>
 
 {% endblock %}

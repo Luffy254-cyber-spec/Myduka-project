@@ -264,3 +264,13 @@ def delete_data(table, record_id):
 def fetch_products_for_dropdown():
     curr.execute("SELECT id, name FROM products ORDER BY name;")
     return curr.fetchall()
+
+# fetch only id and name for dropdowns
+def fetch_products_for_dropdown():
+    try:
+        curr.execute("SELECT id, name FROM products ORDER BY name;")
+        products = curr.fetchall()
+        return products
+    except Exception as e:
+        print(f"Error fetching products for dropdown: {e}")
+        return []

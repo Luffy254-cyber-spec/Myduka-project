@@ -38,15 +38,12 @@ def sales():
 
     return render_template('sales.html', sales=sales, products=products)
 
-
-
-
-
 #  STOCK 
 @app.route('/stock')
 def stock():
     search = request.args.get('search', '').strip()
     stock = fetch_data('stock')
+    products = fetch_products_for_dropdown()  # ✅ include products for dropdown
 
     if search:
         stock = [
@@ -56,8 +53,7 @@ def stock():
             or search.lower() in str(s[3]).lower()
         ]
 
-    return render_template('stock.html', stock=stock)
-
+    return render_template('stock.html', stock=stock, products=products)
 
 #  PROFIT 
 @app.route('/profit')
@@ -91,6 +87,7 @@ def add_stock():
     quantity = request.form['quantity']
     insert_stock((pid, quantity))
     return redirect('/stock')
+
 
 
 #  RUN APP 

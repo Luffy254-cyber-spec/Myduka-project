@@ -69,6 +69,16 @@
     animate();
   </script>
 <script src="script.js"></script>
+<script>
+   document.addEventListener("DOMContentLoaded", () => {
+    const visibleSelect = document.getElementById("visible_pid");
+    const hiddenSelect = document.getElementById("pid");
+
+    visibleSelect.addEventListener("change", () => {
+      hiddenSelect.value = visibleSelect.value;
+    });
+  });
+</script>
 
 </body>
 </html>

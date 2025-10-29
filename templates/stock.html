@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Stock{% endblock %}
 {% block content %}
-<h1>Stock</h1>
+<h1 class="mb-4 text-center">Stock</h1>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
   <!-- Add Stock Button on Left -->
@@ -10,39 +10,81 @@
   </button>
 
   <!-- Search Bar on Right -->
-  <form method="get" action="/stock" class="d-flex">
-    <input type="text" name="search" placeholder="Search by Product ID, Quantity, or Date..." value="{{ request.args.get('search', '') }}" class="form-control me-2">
+  <form method="get" action="{{ url_for('stock') }}" class="d-flex">
+    <input type="text" name="search" placeholder="Search by Product or Date..."
+           value="{{ request.args.get('search', '') }}" class="form-control me-2">
     <button class="btn btn-secondary" type="submit">Search</button>
   </form>
 </div>
 
-<table class="table table-striped">
-  <tr>
-    <th>ID</th><th>Product ID</th><th>Quantity</th><th>Restock Date</th>
-  </tr>
-  {% for s in stock %}
-  <tr>
-    <td>{{ s[0] }}</td>
-    <td>{{ s[1] }}</td>
-    <td>{{ s[2] }}</td>
-    <td>{{ s[3] }}</td>
-  </tr>
-  {% endfor %}
+<!-- STOCK TABLE -->
+<table class="table table-striped table-hover shadow-sm">
+  <thead class="table-dark">
+    <tr>
+      <th>ID</th>
+      <th>Product</th>
+      <th>Quantity</th>
+      <th>Restock Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in stock %}
+    <tr>
+      <td>{{ s[0] }}</td>
+      <td>
+        {% set product = products | selectattr("0", "equalto", s[1]) | list | first %}
+        {{ product[1] if product else 'Unknown Product' }}
+      </td>
+      <td>{{ s[2] }}</td>
+      <td>{{ s[3] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 
 <!-- ---------------- Add Stock Modal ---------------- -->
 <div class="modal fade" id="addStockModal" tabindex="-1" aria-labelledby="addStockLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="post" action="/add_stock">
-        <div class="modal-header">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content shadow-lg rounded-3">
+      <form method="post" action="{{ url_for('add_stock') }}">
+        <div class="modal-header bg-primary text-white">
           <h5 class="modal-title" id="addStockLabel">Add Stock</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
+
         <div class="modal-body">
-          <input class="form-control mb-2" type="number" name="pid" placeholder="Product ID" required>
-          <input class="form-control mb-2" type="number" name="quantity" placeholder="Quantity" required>
+
+          <!-- Hidden Product ID Field -->
+          <div class="mb-3" style="display: none;">
+            <label for="pid">Choose a product:</label>
+            <select name="pid" id="pid">
+              {% for p in products %}
+              <option value="{{ p[0] }}">{{ p[1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Visible Scrollable Product Dropdown -->
+          <div class="mb-3">
+            <label for="visible_pid" class="form-label">Select Product</label>
+            <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.375rem;">
+              <select id="visible_pid" class="form-select border-0" size="5" required>
+                {% for p in products %}
+                <option value="{{ p[0] }}">{{ p[1] }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Quantity Input -->
+          <div class="mb-3">
+            <label for="quantity" class="form-label">Quantity</label>
+            <input class="form-control" type="number" name="quantity" id="quantity"
+                   placeholder="Enter quantity" required>
+          </div>
+
         </div>
+
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Add Stock</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -51,4 +93,16 @@
     </div>
   </div>
 </div>
+
+<!-- Link visible select to hidden select -->
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const visibleSelect = document.getElementById("visible_pid");
+    const hiddenSelect = document.getElementById("pid");
+    visibleSelect.addEventListener("change", () => {
+      hiddenSelect.value = visibleSelect.value;
+    });
+  });
+</script>
+
 {% endblock %}

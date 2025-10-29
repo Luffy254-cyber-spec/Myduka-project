@@ -18,3 +18,12 @@ function animate() {
 }
 
 animate();
+
+ document.addEventListener("DOMContentLoaded", () => {
+    const visibleSelect = document.getElementById("visible_pid");
+    const hiddenSelect = document.getElementById("pid");
+
+    visibleSelect.addEventListener("change", () => {
+      hiddenSelect.value = visibleSelect.value;
+    });
+  });
