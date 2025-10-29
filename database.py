@@ -259,3 +259,8 @@ def delete_data(table, record_id):
     curr.execute(query, (record_id,))
     conn.commit()
     print(f"Record with id {record_id} deleted from {table} table.")
+
+# fetch only id and name for dropdowns
+def fetch_products_for_dropdown():
+    curr.execute("SELECT id, name FROM products ORDER BY name;")
+    return curr.fetchall()

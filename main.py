@@ -1,16 +1,16 @@
-from flask import Flask, render_template, request, redirect
-from database import fetch_data, insert_product, insert_sales, insert_stock, product_profit
+from flask import Flask, render_template, request, redirect, url_for
+from database import fetch_data, fetch_products_for_dropdown, insert_product, insert_sales, insert_stock, product_profit
 
 app = Flask(__name__)
 
-# ---------- ROUTES ----------
+# ROUTES 
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
 
-# ---------- PRODUCTS ----------
+#  PRODUCTS 
 @app.route('/products')
 def products():
     search = request.args.get('search', '').strip()
@@ -22,11 +22,12 @@ def products():
     return render_template('products.html', products=products)
 
 
-# ---------- SALES ----------
+#  SALES 
 @app.route('/sales')
 def sales():
     search = request.args.get('search', '').strip()
     sales = fetch_data('sales')
+    products = fetch_products_for_dropdown()  # 🟢 Added this line
 
     if search:
         sales = [
@@ -35,10 +36,13 @@ def sales():
             or search.lower() in str(s[3]).lower()
         ]
 
-    return render_template('sales.html', sales=sales)
+    return render_template('sales.html', sales=sales, products=products)
 
 
-# ---------- STOCK ----------
+
+
+
+#  STOCK 
 @app.route('/stock')
 def stock():
     search = request.args.get('search', '').strip()
@@ -55,21 +59,21 @@ def stock():
     return render_template('stock.html', stock=stock)
 
 
-# ---------- PROFIT ----------
+#  PROFIT 
 @app.route('/profit')
 def profit():
     profit = product_profit()
     return render_template('profit.html', profit=profit)
 
 
-# ---------- FORM HANDLERS ----------
+# FORM HANDLERS 
 @app.route('/add_product', methods=['POST'])
 def add_product():
     name = request.form['name']
     buying_price = request.form['buying_price']
     selling_price = request.form['selling_price']
     insert_product((name, buying_price, selling_price))
-    return redirect('/products')
+    return redirect(url_for('products'))
 
 
 @app.route('/add_sale', methods=['POST'])
@@ -77,7 +81,8 @@ def add_sale():
     pid = request.form['pid']
     quantity = request.form['quantity']
     insert_sales((pid, quantity))
-    return redirect('/sales')
+    return redirect(url_for('sales'))
+
 
 
 @app.route('/add_stock', methods=['POST'])
@@ -88,6 +93,6 @@ def add_stock():
     return redirect('/stock')
 
 
-# ---------- RUN APP ----------
+#  RUN APP 
 if __name__ == '__main__':
     app.run(debug=True)
