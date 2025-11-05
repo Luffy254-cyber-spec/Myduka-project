@@ -377,3 +377,159 @@ table tbody tr:hover {
   select.form-select:focus {
     outline: none;
   }
+
+  body {
+  background: linear-gradient(135deg, #f0f8ff, #e0f7fa);
+  min-height: 100vh;
+}
+
+.card {
+  transition: all 0.3s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary, .btn-success {
+  border-radius: 25px;
+  transition: 0.3s;
+}
+
+.btn-primary:hover, .btn-success:hover {
+  transform: scale(1.05);
+}
+
+/* Base button styles */
+.btn {
+  position: relative;
+  display: inline-block;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: color 0.3s ease;
+  z-index: 1;
+}
+
+/* Button-specific colors */
+.btn-start {
+  background-color: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+}
+
+.btn-login {
+  background-color: #000000;
+  color: #ffffff;
+  border: 2px solid #000000;
+}
+
+/* Hover overlay effect */
+.btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background-color: #007bff; /* Slide-in color */
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+/* Hover behavior */
+.btn:hover::before {
+  left: 0;
+}
+
+.btn:hover {
+  color: #ffffff;
+}
+
+/* --- Base Button Style --- */
+.btn-custom {
+  background-color: #28a745; /* Green base color */
+  color: white;
+  font-weight: 600;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  border: none;
+  padding: 10px 20px;
+}
+
+/* --- Hover Effect --- */
+.btn-custom:hover {
+  background-color: #218838; /* Darker green hover */
+  color: #fff; /* Keeps text white */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* --- Login Button Style --- */
+.btn-login {
+  background-color: #212121; /* Blue base */
+  color: white;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* --- Hover --- */
+.btn-login:hover {
+  background-color: #0056b3; /* Darker blue */
+  color: #fff;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
+.btn-search {
+  background: linear-gradient(to right, #007bff, #3399ff);
+  color: white;
+  border: none;
+  font-weight: bold;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+}
+
+.btn-search {
+  background-color: #343a40;
+  color: #f8f9fa;
+  border: 1px solid #495057;
+}
+
+.search-form {
+  gap: 0.5rem;
+}
+
+.search-input {
+  border: 2px solid #007bff;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.search-btn {
+  background-color: #7f6edc;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  border-radius: 0.375rem;
+  transition: background-color 0.3s ease;
+  font-size: 1rem;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.search-btn:hover {
+  background-color: #6a5ccf;
+}

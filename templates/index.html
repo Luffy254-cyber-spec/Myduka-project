@@ -1,6 +1,47 @@
 {% extends 'base.html' %}
 {% block title %}Home{% endblock %}
 {% block content %}
-  <h1>Welcome to MyDuka Dashboard</h1>
-  <p>Manage your products, sales, stock, and profits all in one place.</p>
+
+<!-- Welcome Message -->
+<div class="container text-center my-5">
+  <h2 class="fw-bold">Welcome to MyDuka Home Page</h2>
+  <p class="lead">Manage your products, sales, stock, and profits all in one place.</p>
+</div>
+<!-- Hero Section with Carousel Background -->
+<div class="position-relative" style="height: 100vh; overflow: hidden;">
+  <!-- Carousel as Background -->
+  <div id="heroCarousel" class="carousel slide position-absolute top-0 start-0 w-100 h-100" data-bs-ride="carousel" data-bs-interval="5000">
+    <div class="carousel-inner h-100">
+      <div class="carousel-item active h-100">
+        <img src="{{ url_for('static', filename='images/hero2.avif') }}" class="d-block w-100 h-100 object-fit-cover" alt="Background">
+      </div>
+      <div class="carousel-item h-100">
+        <img src="{{ url_for('static', filename='images/hero1.avif') }}" class="d-block w-100 h-100 object-fit-cover" alt="Background">
+      </div>
+      <div class="carousel-item h-100">
+        <img src="{{ url_for('static', filename='images/hero.avif') }}" class="d-block w-100 h-100 object-fit-cover" alt="Background">
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Content Overlay -->
+  <div class="position-relative z-2 text-center text-white d-flex flex-column justify-content-center align-items-center h-100 px-3" style="background: rgba(0, 0, 0, 0.5);">
+    <div class="mb-4">
+      <i class="bi bi-shop-window-fill" style="font-size: 4rem;"></i>
+    </div>
+    <h1 class="display-4 fw-bold">Modern POS System for Your Business</h1>
+    <p class="lead mt-3 mb-4">Streamline your sales, manage inventory, and grow your business with our comprehensive Point of Sale solution.</p>
+    <div class="d-flex justify-content-between w-100 px-5">
+      <div class="d-flex justify-content-between w-100 px-5">
+  <a href="{{ url_for('register') }}" class="btn btn-custom">
+  <i class="bi bi-rocket-takeoff"></i> Get Started Free
+</a>
+
+    <a href="{{ url_for('login') }}" class="btn btn-login">Login</a>
+    </div>
+  </div>
+</div>
+
+
+
 {% endblock %}

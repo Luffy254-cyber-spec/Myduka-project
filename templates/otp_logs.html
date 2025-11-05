@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}OTP Logs | Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h3 class="mb-4 text-center">🔐 OTP Logs</h3>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover table-sm">
+      <thead class="table-light">
+        <tr>
+          <th>ID</th>
+          <th>Email</th>
+          <th>OTP</th>
+          <th>Status</th>
+          <th>Attempted At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.id }}</td>
+          <td>{{ log.email }}</td>
+          <td>{{ log.otp_code or '—' }}</td>
+          <td>
+            <span class="badge bg-{{ 'success' if log.status == 'verified' else 'danger' if log.status == 'failed' else 'secondary' }}">
+              {{ log.status }}
+            </span>
+          </td>
+          <td>{{ log.attempted_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

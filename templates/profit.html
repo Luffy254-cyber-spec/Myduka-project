@@ -1,15 +1,27 @@
 {% extends 'base.html' %}
 {% block title %}Profit{% endblock %}
+
 {% block content %}
-<h1>Profit per Product</h1>
-<table>
-  <tr>
-    <th>Product</th><th>Profit</th>
-  </tr>
-  {% for p in profit %}
-  <tr>
-    <td>{{ p[0] }}</td><td>{{ p[1] }}</td>
-  </tr>
-  {% endfor %}
+<h1 class="mb-4 text-center">Profit per Product</h1>
+
+<table class="table table-bordered table-striped shadow-sm">
+  <thead class="table-dark">
+    <tr>
+      <th>Product</th>
+      <th>Profit</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in profit %}
+    <tr>
+      <td>{{ p.name }}</td>
+      <td>{{ p.profit }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
+
+{% if not profit %}
+  <div class="alert alert-warning text-center mt-4">No profit data available.</div>
+{% endif %}
 {% endblock %}

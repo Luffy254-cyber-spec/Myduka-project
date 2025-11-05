@@ -6,8 +6,9 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <!-- Add Product Button on Left -->
   <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
-    Add Product
-  </button>
+  <i class="bi bi-plus-circle me-1"></i> Add Product
+</button>
+
 
   <!-- Search Bar on Right -->
   <form method="get" action="/products" class="d-flex">
@@ -17,17 +18,21 @@
 </div>
 
 <table class="table table-striped">
-  <tr>
-    <th>ID</th><th>Name</th><th>Buying Price</th><th>Selling Price</th>
-  </tr>
-  {% for p in products %}
-  <tr>
-    <td>{{ p[0] }}</td>
-    <td>{{ p[1] }}</td>
-    <td>{{ p[2] }}</td>
-    <td>{{ p[3] }}</td>
-  </tr>
-  {% endfor %}
+  <thead>
+    <tr>
+      <th>ID</th><th>Name</th><th>Buying Price</th><th>Selling Price</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in products %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.buying_price }}</td>
+      <td>{{ p.selling_price }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 
 <!-- ---------------- Add Product Modal ---------------- -->

@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard | MyDuka{% endblock %}
+{% block content %}
+
+<h1 class="text-center my-4">📊 MyDuka Dashboard</h1>
+<p class="text-center mb-4">Track your total <strong>sales</strong> and <strong>profits</strong> per product.</p>
+
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sales Chart -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm p-3">
+        <h5 class="text-center text-primary mb-3">Sales per Product</h5>
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Profit Chart -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm p-3">
+        <h5 class="text-center text-success mb-3">Profit per Product</h5>
+        <canvas id="profitChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h1 class="text-center my-4">📈 MyDuka Daily Report</h1>
+<p class="text-center mb-4">Visualize your <strong>daily sales</strong> and <strong>profits</strong> trends.</p>
+
+<div class="container-fluid">
+  <div class="row">
+    <!-- Daily Sales Chart -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm p-3">
+        <h5 class="text-center text-primary mb-3">Sales per Day</h5>
+        <canvas id="dailySalesChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Daily Profit Chart -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm p-3">
+        <h5 class="text-center text-success mb-3">Profit per Day</h5>
+        <canvas id="dailyProfitChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // --- SALES BAR CHART (Vertical + Multi-color) ---
+  const salesCtx = document.getElementById('salesChart').getContext('2d');
+  new Chart(salesCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ sales_labels | tojson }},
+      datasets: [{
+        label: 'Total Sales (KSh)',
+        data: {{ sales_values | tojson }},
+        backgroundColor: {{ sales_labels | tojson }}.map((_, i) => `hsl(${i * 30}, 70%, 60%)`),
+        borderColor: '#2c6aa0',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Sales per Product', font: { size: 18 } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Amount (KSh)' } },
+        x: { title: { display: true, text: 'Product Name' } }
+      }
+    }
+  });
+
+  // --- PROFIT BAR CHART (Vertical + Multi-color) ---
+  const profitCtx = document.getElementById('profitChart').getContext('2d');
+  new Chart(profitCtx, {
+    type: 'bar',
+    data: {
+      labels: {{ profit_labels | tojson }},
+      datasets: [{
+        label: 'Total Profit (KSh)',
+        data: {{ profit_values | tojson }},
+        backgroundColor: {{ profit_labels | tojson }}.map((_, i) => `hsl(${i * 30}, 60%, 60%)`),
+        borderColor: '#218838',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        title: { display: true, text: 'Profit per Product', font: { size: 18 } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Amount (KSh)' } },
+        x: { title: { display: true, text: 'Product Name' } }
+      }
+    }
+  });
+
+  // --- DAILY SALES LINE CHART (Retained) ---
+  const dailySalesCtx = document.getElementById('dailySalesChart').getContext('2d');
+  new Chart(dailySalesCtx, {
+    type: 'line',
+    data: {
+      labels: {{ daily_sales_labels | tojson }},
+      datasets: [{
+        label: 'Total Sales (KSh)',
+        data: {{ daily_sales_values | tojson }},
+        borderColor: '#007bff',
+        backgroundColor: 'rgba(0,123,255,0.2)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: { display: true, text: 'Sales per Day', font: { size: 18 } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Amount (KSh)' } },
+        x: { title: { display: true, text: 'Date' } }
+      }
+    }
+  });
+
+  // --- DAILY PROFIT LINE CHART (Retained) ---
+  const dailyProfitCtx = document.getElementById('dailyProfitChart').getContext('2d');
+  new Chart(dailyProfitCtx, {
+    type: 'line',
+    data: {
+      labels: {{ daily_profit_labels | tojson }},
+      datasets: [{
+        label: 'Total Profit (KSh)',
+        data: {{ daily_profit_values | tojson }},
+        borderColor: '#28a745',
+        backgroundColor: 'rgba(40,167,69,0.2)',
+        fill: true,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: { display: true, text: 'Profit per Day', font: { size: 18 } }
+      },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Amount (KSh)' } },
+        x: { title: { display: true, text: 'Date' } }
+      }
+    }
+  });
+</script>
+{% endblock %}

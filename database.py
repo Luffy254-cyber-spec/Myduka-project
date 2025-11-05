@@ -1,145 +1,28 @@
 import psycopg2
 from datetime import datetime
-
+import psycopg2.extras
 # connect to PostgreSQL
-conn = psycopg2.connect(
-    host="localhost",
-    port=5432,
-    user="postgres",
-    password="12199",
-    dbname="myduka_db"
-)
-curr = conn.cursor()
 
+def get_connection():
+    return psycopg2.connect(
+        host="localhost",
+        port=5432,
+        user="postgres",
+        password="12199",
+        dbname="myduka_db",
+        cursor_factory=psycopg2.extras.RealDictCursor  # returns rows as dictionaries
+    )
 
-# # PRODUCTS
-
-# def fetch_products():
-#     curr.execute('select * from products;')
-#     products = curr.fetchall()
-#     return products
-
-# products = fetch_products()
-# print(" PRODUCTS:")
-# print(products)
-
-
-# # STOCK
-
-# def fetch_stock():
-#     curr.execute('select * from stock;')
-#     stock = curr.fetchall()
-#     return stock
-
-# stock = fetch_stock()
-# print(" STOCK:")
-# print(stock)
-
-# # SALES
-
-# def fetch_sales():
-#     curr.execute('select * from sales;')
-#     sales = curr.fetchall()
-#     return sales
-
-# sales = fetch_sales()
-# print(" SALES:")
-# print(sales)
-
-
-
-# # INSERT PRODUCT
-
-# def insert_product(name, buying_price, selling_price):
-#     curr.execute(
-#         "insert into products (name, buying_price, selling_price) values (%s, %s, %s)",
-#         (name, buying_price, selling_price)
-#     )
-#     conn.commit()
-#     print(f" Product '{name}' added!")
-
-
-
-
-# # INSERT STOCK
-
-# def insert_stock(pid, quantity):
-#     curr.execute(
-#         "insert into stock (pid, stock_quantity) values (%s, %s) on conflict (pid) do update set stock_quantity = stock.stock_quantity + excluded.stock_quantity",
-#         (pid, quantity)
-#     )
-#     conn.commit()
-#     print(f" Added {quantity} units to stock for product ID {pid}")
-
-
-
-
-
-# # INSERT SALE
-
-# def insert_sale(pid, quantity):
-#     curr.execute("select stock_quantity from stock where pid = %s", (pid,))
-#     stock = curr.fetchone()
-
-#     if not stock:
-#         print(" Product not found in stock.")
-#         return
-
-#     if stock[0] < quantity:
-#         print(" Not enough stock available.")
-#         return
-
-#     curr.execute(
-#         "insert into sales (pid, quantity, created_at) values (%s, %s, %s)",
-#         (pid, quantity, datetime.now())
-#     )
-
-#     curr.execute(
-#         "update stock set stock_quantity = stock_quantity - %s where pid = %s",
-#         (quantity, pid)
-#     )
-
-#     conn.commit()
-#     print(f" Sale of {quantity} units recorded for product ID {pid}")
-
-
-# # PROFIT PER PRODUCT
-
-# def get_profit_per_product():
-#     curr.execute("""
-#         select p.name, sum(s.quantity * (p.selling_price - p.buying_price)) as profit
-#         from sales s
-#         join products p on s.pid = p.id
-#         group by p.name
-#     """)
-#     profit = curr.fetchall()
-#     return profit
-
-# profit = get_profit_per_product()
-# print(" PROFIT PER PRODUCT:")
-# print(profit)
-
-
-
-# # SALES PER PRODUCT
-
-# def get_sales_per_product():
-#     curr.execute("""
-#         select p.name, sum(s.quantity) as total_sold
-#         from sales s
-#         join products p on s.pid = p.id
-#         group by p.name
-#     """)
-#     sales_per_product = curr.fetchall()
-#     return sales_per_product
-
-# sales_per_product = get_sales_per_product()
-# print(" SALES PER PRODUCT:")
-# print(sales_per_product)
 
 def fetch_data(table_name):
-     curr.execute(f"SELECT * FROM {table_name}")
-     return curr.fetchall()
+    conn = get_connection()
+    curr = conn.cursor()
+    curr.execute(f"SELECT * FROM {table_name}")
+    data = curr.fetchall()
+    curr.close()
+    conn.close()
+    return data
+
 
 # PRODUCTS
 products = fetch_data("products")
@@ -156,121 +39,278 @@ sales = fetch_data("sales")
 print(" SALES:")
 print(sales)
 
-# def insert_product(name, buying_price, selling_price):
-#     query = "
-#         INSERT INTO products(name, buying_price, selling_price)
-#         VALUES (%s, %s, %s);
-#     "
-#     curr.execute(query, (name, buying_price, selling_price))
-
-
-# conn.commit()
 
 def insert_product(p_values):
-     query = "INSERT INTO products(name, buying_price, selling_price) VALUES (%s, %s, %s);"
-    
-     curr.execute(query, p_values)
-     conn.commit() 
+    conn = get_connection()
+    curr = conn.cursor()
+    query = "INSERT INTO products(name, buying_price, selling_price) VALUES (%s, %s, %s);"
+    curr.execute(query, p_values)
+    conn.commit()
+    curr.close()
+    conn.close()
 
-# new_product=('Avocados',50,70)
-# # insert_product(new_product)
-# products = fetch_data('products')
-# print(products)
 
-#insert sales
 def insert_sales(values):
-     query = 'insert into sales(pid, quantity, created_at) values(%s, %s, now());'
-     curr.execute(query, values)
-     conn.commit()
+    conn = get_connection()
+    curr = conn.cursor()
+    query = 'INSERT INTO sales(pid, quantity, created_at) VALUES(%s, %s, NOW());'
+    curr.execute(query, values)
+    conn.commit()
+    curr.close()
+    conn.close()
 
-# new_sale = (2,5)
-# #insert_sales(new_sale)
-# sales = fetch_data('sales')
-# print(sales)
 
-# insert stock
 def insert_stock(values):
+    conn = get_connection()
+    curr = conn.cursor()
     query = 'INSERT INTO stock(pid, stock_quantity) VALUES (%s, %s);'
     curr.execute(query, values)
     conn.commit()
-
-# new_stock = (2, 5)  
-# #insert_stock(new_stock)
-# stock = fetch_data('stock')
-# print(stock)
-
-# def insert_products(name, bp, sp):
-#     curr.execute(
-#         f"insert into products(name, buying_price, selling_price) values('{name}', {bp}, {sp})"
-#     )
-#     connect.commit()
-
-# insert_products("milk", 60, 100)
-
-# products = fetch_data('products')
-# print(products)
+    curr.close()
+    conn.close()
 
 
-# # profit per product
-# def fetch_profit_per_product():
-#     query = "SELECT name, (selling_price - buying_price) AS profit_per_product FROM products;"
-#     curr.execute(query)
-#     conn.commit()
-    
-# profit_data = fetch_profit_per_product()
-# profit_data = fetch_data('products')
-# print(profit_data)
-
-
-# # sales per product
-# def fetch_sales_per_product():
-#     query = "SELECT p.name, SUM(s.quantity) AS total_sales FROM sales s JOIN products p ON s.pid = p.id GROUP BY p.name;"
-#     curr.execute(query)
-#     conn.commit()
-
-# sales_data = fetch_sales_per_product()
-# sales_data = fetch_data('sales')
-# print(sales_data)
-# profit per product
 def product_profit():
-    query = 'SELECT p.name, p.id, SUM((p.selling_price - p.buying_price) * s.quantity) AS profit FROM sales AS s INNER JOIN products AS p ON s.pid = p.id GROUP BY p.name, p.id;'
+    conn = get_connection()
+    curr = conn.cursor()
+    query = '''
+        SELECT p.name, p.id, SUM((p.selling_price - p.buying_price) * s.quantity) AS profit
+        FROM sales AS s
+        INNER JOIN products AS p ON s.pid = p.id
+        GROUP BY p.name, p.id;
+    '''
     curr.execute(query)
     profit = curr.fetchall()
+    curr.close()
+    conn.close()
     return profit
+
 
 myprofits = product_profit()
 print(f"My products profit: {myprofits}")
 
 
-# sales per product
 def product_sales():
-    query = 'SELECT p.id, p.name, SUM(p.selling_price * s.quantity) AS total_sales FROM sales AS s JOIN products AS p ON s.pid = p.id GROUP BY p.id, p.name;'
+    conn = get_connection()
+    curr = conn.cursor()
+    query = '''
+        SELECT p.id, p.name, SUM(p.selling_price * s.quantity) AS total_sales
+        FROM sales AS s
+        JOIN products AS p ON s.pid = p.id
+        GROUP BY p.id, p.name;
+    '''
     curr.execute(query)
     sales = curr.fetchall()
+    curr.close()
+    conn.close()
     return sales
+
 
 mysales = product_sales()
 print(f"My products sales: {mysales}")
 
 
-# delete data by id
 def delete_data(table, record_id):
+    conn = get_connection()
+    curr = conn.cursor()
     query = f'DELETE FROM {table} WHERE id = %s;'
     curr.execute(query, (record_id,))
     conn.commit()
+    curr.close()
+    conn.close()
     print(f"Record with id {record_id} deleted from {table} table.")
 
-# fetch only id and name for dropdowns
-def fetch_products_for_dropdown():
-    curr.execute("SELECT id, name FROM products ORDER BY name;")
-    return curr.fetchall()
 
-# fetch only id and name for dropdowns
 def fetch_products_for_dropdown():
-    try:
-        curr.execute("SELECT id, name FROM products ORDER BY name;")
-        products = curr.fetchall()
-        return products
-    except Exception as e:
-        print(f"Error fetching products for dropdown: {e}")
-        return []
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name FROM products")
+    products = cur.fetchall()
+    cur.close()
+    conn.close()
+    return products
+
+
+def daily_sales():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DATE(created_at) AS day,
+               SUM(p.selling_price * s.quantity) AS total_sales
+        FROM sales s
+        JOIN products p ON s.pid = p.id
+        GROUP BY day
+        ORDER BY day;
+    """)
+    data = cur.fetchall()
+    cur.close()
+    conn.close()
+    return data  # ✅ This must be present
+# Secondary get_connection removed; using the real get_connection defined at the top of the file.
+
+
+
+def daily_profit():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT DATE(created_at) AS day,
+               SUM((p.selling_price - p.buying_price) * s.quantity) AS total_profit
+        FROM sales s
+        JOIN products p ON s.pid = p.id
+        GROUP BY day
+        ORDER BY day;
+    """)
+    data = cur.fetchall()
+    cur.close()
+    conn.close()
+    return data
+
+
+def get_user_by_email(email):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE email = %s;", (email,))
+    user = cur.fetchone()
+    cur.close()
+    conn.close()
+    return user
+
+
+def create_user(full_name, email, password_hash):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (full_name, email, password_hash)
+        VALUES (%s, %s, %s);
+    """, (full_name, email, password_hash))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def update_password(email, new_hash):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET password_hash = %s WHERE email = %s;", (new_hash, email))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def save_otp(email, otp_code, expiry_time):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE users
+        SET otp_code = %s, otp_expiry = %s
+        WHERE email = %s;
+    """, (otp_code, expiry_time, email))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def verify_otp(email, otp_input):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT otp_code, otp_expiry
+        FROM users
+        WHERE email = %s;
+    """, (email,))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+
+    if not result:
+        return False
+
+    now = datetime.utcnow()
+    return result['otp_code'] == otp_input and now <= result['otp_expiry']
+
+
+def log_otp_attempt(email, otp_code, status):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO otp_logs (email, otp_code, status, attempted_at)
+        VALUES (%s, %s, %s, NOW());
+    """, (email, otp_code, status))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def log_otp_expiry(email):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO otp_logs (email, otp_code, status, attempted_at)
+        VALUES (%s, NULL, 'expired', NOW());
+    """, (email,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def fetch_otp_logs(limit=100):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT id, email, otp_code, status, attempted_at
+        FROM otp_logs
+        ORDER BY attempted_at DESC
+        LIMIT %s;
+    """, (limit,))
+    logs = cur.fetchall()
+    cur.close()
+    conn.close()
+    return logs
+
+
+def search_everything(term):
+    conn = get_connection()
+    cur = conn.cursor()
+    like = f"%{term}%"
+
+    cur.execute("""
+        SELECT 'user' AS type, id, full_name AS label, email AS detail
+        FROM users
+        WHERE full_name ILIKE %s OR email ILIKE %s
+
+        UNION
+
+        SELECT 'product', id, name AS label, CAST(selling_price AS TEXT) AS detail
+        FROM products
+        WHERE name ILIKE %s OR CAST(selling_price AS TEXT) ILIKE %s
+
+        UNION
+
+        SELECT 'sale', id, CAST(pid AS TEXT) AS label, CAST(quantity AS TEXT) AS detail
+        FROM sales
+        WHERE CAST(pid AS TEXT) ILIKE %s OR CAST(quantity AS TEXT) ILIKE %s
+
+        UNION
+
+        SELECT 'stock', id, CAST(pid AS TEXT) AS label, CAST(stock_quantity AS TEXT) AS detail
+        FROM stock
+        WHERE CAST(pid AS TEXT) ILIKE %s OR CAST(stock_quantity AS TEXT) ILIKE %s
+    """, (like, like, like, like, like, like, like, like))
+
+    results = cur.fetchall()
+    cur.close()
+    conn.close()
+    return results
+
+def fetch_user_by_id(user_id):
+    """
+    Fallback helper to locate a user by id using fetch_data('users').
+    This is used when the database module doesn't expose a direct fetch_user_by_id.
+    """
+    users = fetch_data('users') or []
+    for u in users:
+        # Compare as strings to be resilient to int/str id types
+        if str(u.get('id')) == str(user_id):
+            return u
+    return None

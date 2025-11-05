@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h4 class="mb-3">Search Results for: <span class="text-primary">{{ query }}</span></h4>
+
+  {% if results %}
+    <div class="list-group">
+      {% for row in results %}
+        <div class="list-group-item">
+          <strong class="text-uppercase">{{ row.type }}</strong>: 
+          <span class="fw-bold">{{ row.label }}</span>
+          <small class="text-muted ms-2">{{ row.detail }}</small>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="alert alert-warning text-center">No results found for "{{ query }}".</div>
+  {% endif %}
+</div>
+{% endblock %}

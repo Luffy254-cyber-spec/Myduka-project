@@ -31,13 +31,13 @@
   <tbody>
     {% for s in sales %}
     <tr>
-      <td>{{ s[0] }}</td>
+      <td>{{ s.id }}</td>
       <td>
-        {% set product = products | selectattr("0", "equalto", s[1]) | list | first %}
-        {{ product[1] if product else 'Unknown Product' }}
+        {% set product = products | selectattr("id", "equalto", s.pid) | list | first %}
+        {{ product.name if product else 'Unknown Product' }}
       </td>
-      <td>{{ s[2] }}</td>
-      <td>{{ s[3] }}</td>
+      <td>{{ s.quantity }}</td>
+      <td>{{ s.created_at.strftime('%Y-%m-%d') }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -60,7 +60,7 @@
             <label for="pid">Choose a product:</label>
             <select name="pid" id="pid">
               {% for p in products %}
-              <option value="{{ p[0] }}">{{ p[1] }}</option>
+              <option value="{{ p.id }}">{{ p.name }}</option>
               {% endfor %}
             </select>
           </div>
@@ -71,7 +71,7 @@
             <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.375rem;">
               <select id="visible_pid" class="form-select border-0" size="5" required>
                 {% for p in products %}
-                <option value="{{ p[0] }}">{{ p[1] }}</option>
+                <option value="{{ p.id }}">{{ p.name }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -99,9 +99,11 @@
     const visibleSelect = document.getElementById("visible_pid");
     const hiddenSelect = document.getElementById("pid");
 
-    visibleSelect.addEventListener("change", () => {
-      hiddenSelect.value = visibleSelect.value;
-    });
+    if (visibleSelect && hiddenSelect) {
+      visibleSelect.addEventListener("change", () => {
+        hiddenSelect.value = visibleSelect.value;
+      });
+    }
   });
 </script>
 
