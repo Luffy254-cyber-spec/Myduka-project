@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}System Statistics{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <h3 class="mb-4">📊 System Statistics</h3>
+
+  <!-- Summary Cards -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body text-center">
+          <h5 class="card-title text-muted">Total Users</h5>
+          <h3 class="fw-bold">{{ stats.total_users or 0 }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body text-center">
+          <h5 class="card-title text-muted">Total Sales</h5>
+          <h3 class="fw-bold">{{ stats.total_sales or 0 }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body text-center">
+          <h5 class="card-title text-muted">Total Revenue</h5>
+          <h3 class="fw-bold text-success">KSh {{ "{:,.2f}".format(stats.total_revenue or 0) }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue Chart -->
+  <div class="card shadow-sm border-0 rounded-3">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Revenue (Last 30 Days)</h5>
+      <canvas id="revenueChart" height="90"></canvas>
+    </div>
+  </div>
+
+  <!-- Top Products Table -->
+  {% if top_products %}
+  <div class="card shadow-sm border-0 rounded-3 mt-4">
+    <div class="card-body">
+      <h5 class="card-title mb-3">Top Products</h5>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Product</th>
+              <th>Sold</th>
+              <th>Revenue (KSh)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in top_products %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ p.product_name or 'N/A' }}</td>
+              <td>{{ p.sold or 0 }}</td>
+              <td>KSh {{ "{:,.2f}".format(p.revenue or 0) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('revenueChart');
+  const labels = {{ revenue_labels | tojson | safe }};
+  const values = {{ revenue_values | tojson | safe }};
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Revenue (KSh)',
+        data: values,
+        fill: true,
+        borderColor: '#28a745',
+        backgroundColor: 'rgba(40,167,69,0.1)',
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: value => 'KSh ' + value.toLocaleString() }
+        }
+      },
+      plugins: {
+        legend: { display: true, position: 'top' }
+      }
+    }
+  });
+</script>
+{% endblock %}

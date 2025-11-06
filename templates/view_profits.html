@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-3">Product Profits</h2>
+
+  <table class="table table-bordered table-hover">
+    <thead class="table-dark">
+      <tr>
+        <th>Product</th>
+        <th>Buying Price</th>
+        <th>Selling Price</th>
+        <th>Units Sold</th>
+        <th>Total Profit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for profit in profits %}
+      <tr>
+        <td>{{ profit[0] }}</td>
+        <td>{{ profit[1] }}</td>
+        <td>{{ profit[2] }}</td>
+        <td>{{ profit[3] }}</td>
+        <td>{{ profit[4] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

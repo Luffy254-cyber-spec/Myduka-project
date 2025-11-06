@@ -1,6 +1,10 @@
+from flask import flash, redirect, url_for
+from flask_login import current_user
 import psycopg2
 from datetime import datetime
 import psycopg2.extras
+from functools import wraps
+from psycopg2.extras import RealDictCursor
 # connect to PostgreSQL
 
 def get_connection():
@@ -314,3 +318,350 @@ def fetch_user_by_id(user_id):
         if str(u.get('id')) == str(user_id):
             return u
     return None
+
+# 🧮 Total Products
+def count_products():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS total FROM products")
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row['total'] if row else 0
+
+# 💰 Total Sales (KSh)
+def calculate_total_sales():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT COALESCE(SUM(s.quantity * p.selling_price), 0) AS total_sales
+        FROM sales s
+        JOIN products p ON s.pid = p.id
+    """)
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row['total_sales'] if row else 0
+
+# 📦 Total Stock
+def calculate_total_stock():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COALESCE(SUM(stock_quantity), 0) AS total_stock FROM stock")
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row['total_stock'] if row else 0
+
+# 📈 Total Profit (KSh)
+def calculate_total_profit():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT COALESCE(SUM(s.quantity * (p.selling_price - p.buying_price)), 0) AS total_profit
+        FROM sales s
+        JOIN products p ON s.pid = p.id
+    """)
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row['total_profit'] if row else 0
+
+# 📉 Loss Incurred (KSh)
+def calculate_total_loss():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        SELECT COALESCE(SUM(s.quantity * (p.buying_price - p.selling_price)), 0) AS total_loss
+        FROM sales s
+        JOIN products p ON s.pid = p.id
+        WHERE p.buying_price > p.selling_price
+    """)
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row['total_loss'] if row else 0
+
+# 🧾 Total Transactions
+def count_sales_entries():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) AS total FROM sales")
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row['total'] if row else 0
+
+def create_tables():
+    """Create basic tables for user management & audit."""
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    full_name VARCHAR(255) NOT NULL,
+                    email VARCHAR(255) UNIQUE NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL,
+                    role VARCHAR(50) DEFAULT 'user',
+                    created_at TIMESTAMP DEFAULT NOW()
+                );
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id SERIAL PRIMARY KEY,
+                    actor VARCHAR(255),
+                    action TEXT,
+                    timestamp TIMESTAMP DEFAULT NOW()
+                );
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS violations (
+                    id SERIAL PRIMARY KEY,
+                    email VARCHAR(255),
+                    reason TEXT,
+                    timestamp TIMESTAMP DEFAULT NOW()
+                );
+            """)
+            conn.commit()
+
+def get_user_by_email(email):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM users WHERE email = %s;", (email,))
+        return cur.fetchone()
+
+def fetch_user_by_id(user_id):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM users WHERE id = %s;", (user_id,))
+        return cur.fetchone()
+
+def get_all_users():
+    with get_connection() as conn, conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT id, full_name, email, role, created_at
+            FROM users
+            ORDER BY created_at DESC;
+        """)
+        return cur.fetchall()
+
+def update_user_role(user_id, new_role):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("UPDATE users SET role = %s WHERE id = %s RETURNING email;", (new_role, user_id))
+        res = cur.fetchone()
+        conn.commit()
+        if res:
+            log_audit("system", f"Updated role for {res['email']} to {new_role}")
+        return res
+
+def get_audit_logs(limit=50):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("""
+            SELECT actor, action, timestamp
+            FROM audit_logs
+            ORDER BY timestamp DESC
+            LIMIT %s;
+        """, (limit,))
+        return cur.fetchall()
+
+def log_audit(actor, action):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("INSERT INTO audit_logs (actor, action) VALUES (%s,%s);", (actor, action))
+        conn.commit()
+
+def log_violation(email, reason):
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("INSERT INTO violations (email, reason) VALUES (%s,%s);", (email, reason))
+        conn.commit()
+        log_audit("system", f"Violation logged for {email}: {reason}")
+
+def get_violation_logs():
+    with get_connection() as conn, conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT v.id, u.full_name, v.violation_type, v.description,
+                   v.detected_at, v.resolved, v.severity, v.ban_duration
+            FROM violation_logs v
+            JOIN users u ON v.user_id = u.id
+            ORDER BY v.detected_at DESC;
+        """)
+        return cur.fetchall()
+
+
+def get_system_stats():
+    with get_connection() as conn, conn.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM users;"); total_users = cur.fetchone()['count']
+        cur.execute("SELECT COUNT(*) FROM users WHERE role='admin';"); total_admins = cur.fetchone()['count']
+        cur.execute("SELECT COUNT(*) FROM users WHERE role='superadmin';"); total_superadmins = cur.fetchone()['count']
+        cur.execute("SELECT COUNT(*) FROM users WHERE role='supplier';"); total_suppliers = cur.fetchone()['count']
+        cur.execute("SELECT COUNT(*) FROM violations;"); total_violations = cur.fetchone()['count']
+        return {
+            "total_users": total_users,
+            "total_admins": total_admins,
+            "total_superadmins": total_superadmins,
+            "total_suppliers": total_suppliers,
+            "total_violations": total_violations
+        }
+
+def fetch_one(query, params=None):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(query, params or ())
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    return row
+
+def execute_query(query, params=None):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(query, params or ())
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def fetch_all(query, params=None):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(query, params or ())
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+# ---------- CUSTOM ADMIN QUERIES ----------
+def get_audit_logs():
+    query = "SELECT * FROM audit_logs ORDER BY created_at DESC;"
+    return fetch_all(query)
+
+def get_system_stats():
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cur.execute("SELECT COUNT(*) AS total_users FROM users;")
+    total_users = cur.fetchone()['total_users']
+
+    cur.execute("SELECT COUNT(*) AS total_sales FROM sales;")
+    total_sales = cur.fetchone()['total_sales']
+
+    # Use product price × quantity for total revenue
+    cur.execute("""
+        SELECT COALESCE(SUM(p.price * s.quantity), 0) AS total_revenue
+        FROM sales s
+        JOIN products p ON s.product_id = p.id;
+    """)
+    total_revenue = cur.fetchone()['total_revenue']
+
+    cur.close()
+    conn.close()
+
+    return {
+        'total_users': total_users,
+        'total_sales': total_sales,
+        'total_revenue': total_revenue
+    }
+
+def get_recent_sales(limit=10):
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    query = """
+        SELECT s.id, p.name AS product_name, s.quantity, s.total, s.created_at
+        FROM sales s
+        LEFT JOIN products p ON s.product_id = p.id
+        ORDER BY s.created_at DESC
+        LIMIT %s;
+    """
+    cur.execute(query, (limit,))
+    results = cur.fetchall()
+
+    cur.close()
+    conn.close()
+    return [dict(r) for r in results]
+
+
+# -------------------------------------------------
+# ✅ 2. Get top products by total revenue
+# -------------------------------------------------
+def get_top_products_by_revenue(limit=5):
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    query = """
+        SELECT p.name, SUM(s.total) AS revenue, SUM(s.quantity) AS sold
+        FROM sales s
+        LEFT JOIN products p ON s.product_id = p.id
+        GROUP BY p.name
+        ORDER BY revenue DESC
+        LIMIT %s;
+    """
+    cur.execute(query, (limit,))
+    results = cur.fetchall()
+
+    cur.close()
+    conn.close()
+    return [dict(r) for r in results]
+
+
+# -------------------------------------------------
+# ✅ 3. Get revenue trend (for Chart.js graph)
+# -------------------------------------------------
+def get_revenue_timeseries(days=30):
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    query = """
+        SELECT 
+            DATE(s.created_at) AS sale_date,
+            COALESCE(SUM(s.total), 0) AS daily_revenue
+        FROM sales s
+        WHERE s.created_at >= NOW() - INTERVAL %s
+        GROUP BY DATE(s.created_at)
+        ORDER BY DATE(s.created_at);
+    """
+    cur.execute(query, (f'{days} days',))
+    data = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    labels = [str(row['sale_date']) for row in data]
+    values = [float(row['daily_revenue']) for row in data]
+    return labels, values
+
+def get_top_products(limit=5):
+    """
+    Fetch top-selling products by total quantity and revenue.
+    Joins products and sales tables to compute totals.
+    """
+    conn = get_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    query = """
+        SELECT 
+            p.id,
+            p.name AS product_name,
+            COALESCE(SUM(s.quantity), 0) AS total_sold,
+            COALESCE(SUM(p.price * s.quantity), 0) AS total_revenue
+        FROM products p
+        LEFT JOIN sales s ON p.id = s.product_id
+        GROUP BY p.id, p.name
+        ORDER BY total_revenue DESC
+        LIMIT %s;
+    """
+
+    cur.execute(query, (limit,))
+    products = cur.fetchall()
+
+    cur.close()
+    conn.close()
+    return products
+
+def update_user_role(user_id, new_role):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET role = %s WHERE id = %s;", (new_role, user_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+if __name__ == "__main__":
+    create_tables()

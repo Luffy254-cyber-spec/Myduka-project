@@ -14,7 +14,9 @@
   <form method="get" action="{{ url_for('sales') }}" class="d-flex">
     <input type="text" name="search" placeholder="Search by Product or Date..."
       value="{{ request.args.get('search', '') }}" class="form-control me-2">
-    <button class="btn btn-secondary" type="submit">Search</button>
+    <button class="btn btn-secondary" type="submit">
+      <i class="bi bi-search me-1"></i> Search
+    </button>
   </form>
 </div>
 
@@ -80,7 +82,8 @@
           <!-- Quantity Input -->
           <div class="mb-3">
             <label for="quantity" class="form-label">Quantity</label>
-            <input class="form-control" type="number" name="quantity" id="quantity" placeholder="Enter quantity" required>
+            <input class="form-control" type="number" name="quantity" id="quantity" placeholder="Enter quantity"
+              required>
           </div>
         </div>
 

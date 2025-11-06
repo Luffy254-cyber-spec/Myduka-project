@@ -159,4 +159,73 @@
     }
   });
 </script>
+
+<h2 class="text-center my-4">📦 MyDuka Summary</h2>
+<p class="text-center mb-4">Quick overview of your store’s performance and inventory.</p>
+
+<div class="container-fluid">
+  <div class="row g-4 justify-content-center">
+
+    <!-- Total Products -->
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-center shadow-sm border-primary">
+        <div class="card-body">
+          <h5 class="card-title text-primary"><i class="bi bi-box-seam me-2"></i> Total Products</h5>
+          <h3 class="fw-bold">{{ total_products }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Sales -->
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-center shadow-sm border-info">
+        <div class="card-body">
+          <h5 class="card-title text-info"><i class="bi bi-cart-check me-2"></i> Total Sales</h5>
+          <h3 class="fw-bold">KSh {{ total_sales }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Stock -->
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-center shadow-sm border-warning">
+        <div class="card-body">
+          <h5 class="card-title text-warning"><i class="bi bi-stack me-2"></i> Total Stock</h5>
+          <h3 class="fw-bold">{{ total_stock }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Total Profit -->
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-center shadow-sm border-success">
+        <div class="card-body">
+          <h5 class="card-title text-success"><i class="bi bi-graph-up-arrow me-2"></i> Total Profit</h5>
+          <h3 class="fw-bold">KSh {{ total_profit }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loss Incurred -->
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-center shadow-sm border-danger">
+        <div class="card-body">
+          <h5 class="card-title text-danger"><i class="bi bi-graph-down-arrow me-2"></i> Loss Incurred</h5>
+          <h3 class="fw-bold">KSh {{ total_loss }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- Optional: Total Transactions -->
+    <div class="col-md-4 col-lg-3">
+      <div class="card text-center shadow-sm border-secondary">
+        <div class="card-body">
+          <h5 class="card-title text-secondary"><i class="bi bi-receipt me-2"></i> Transactions</h5>
+          <h3 class="fw-bold">{{ total_transactions }}</h3>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
 {% endblock %}

@@ -1,12 +1,13 @@
 from datetime import datetime, timedelta
+from functools import wraps
 import random
 from flask import Flask, flash, render_template, request, redirect, session, url_for
 from flask_mail import Message, Mail
-from database import create_user, daily_profit, daily_sales, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_user_by_email, insert_product, insert_sales, insert_stock, log_otp_attempt, product_profit, product_sales, save_otp, search_everything, update_password, verify_otp
+from database import calculate_total_loss, calculate_total_profit, calculate_total_sales, calculate_total_stock, count_products, count_sales_entries, create_user, daily_profit, daily_sales, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_all_users, get_audit_logs, get_connection, get_recent_sales, get_revenue_timeseries, get_system_stats, get_top_products, get_top_products_by_revenue, get_user_by_email, get_violation_logs, insert_product, insert_sales, insert_stock, log_otp_attempt, product_profit, product_sales, save_otp, search_everything, update_password, update_user_role, verify_otp
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, login_required
+from flask_login import LoginManager, current_user, login_required, logout_user
 from flask_login import UserMixin
-from flask_login import login_user, logout_user, current_user
+from flask_login import login_user
 
 
 # import os
@@ -19,6 +20,25 @@ login_manager.login_view = 'login'  # Redirects to this route if not logged in
 app.secret_key = 'your-unique-secret-key'  # 🔐 Add this line
 # app.secret_key = os.environ.get('SECRET_KEY', 'fallback-dev-key')
 # ROUTES 
+
+# ---------- DECORATORS ----------
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role not in ("admin", "superadmin"):
+            flash("Admin access required.", "danger")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def superadmin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != "superadmin":
+            flash("Superadmin access required.", "danger")
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/')
 def home():
@@ -109,7 +129,6 @@ def add_stock():
     insert_stock((pid, quantity))
     return redirect('/stock')
 
-# DASHBOARD
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -133,8 +152,17 @@ def dashboard():
     daily_profit_labels = [row['day'].strftime('%Y-%m-%d') for row in daily_profit_data]
     daily_profit_values = [float(row['total_profit']) for row in daily_profit_data]
 
+    # --- Summary totals ---
+    total_products = count_products()
+    total_sales = calculate_total_sales()
+    total_stock = calculate_total_stock()
+    total_profit = calculate_total_profit()
+    total_loss = calculate_total_loss()
+    total_transactions = count_sales_entries()
+
     return render_template(
         'dashboard.html',
+        # Chart data
         sales_labels=sales_labels,
         sales_values=sales_values,
         profit_labels=profit_labels,
@@ -142,7 +170,15 @@ def dashboard():
         daily_sales_labels=daily_sales_labels,
         daily_sales_values=daily_sales_values,
         daily_profit_labels=daily_profit_labels,
-        daily_profit_values=daily_profit_values
+        daily_profit_values=daily_profit_values,
+
+        # Summary totals
+        total_products=total_products,
+        total_sales=total_sales,
+        total_stock=total_stock,
+        total_profit=total_profit,
+        total_loss=total_loss,
+        total_transactions=total_transactions
     )
 
 # def check_password_hash(stored_hash, password):
@@ -156,19 +192,29 @@ def login():
 
         user = get_user_by_email(email)
 
-        if user and check_password_hash(user['password_hash'], password):
-            user_obj = User(user['id'], user['full_name'])
-            login_user(user_obj)  # ✅ this activates Flask-Login session
-            session['user_name'] = user['full_name']
-            flash(f"Welcome back, {user['full_name']}!", "success")
-            return redirect(url_for('dashboard'))
-
-        else:
+        # Validate user credentials
+        if not user or not check_password_hash(user['password_hash'], password):
             flash("Invalid email or password.", "danger")
             return redirect(url_for('login'))
 
-    return render_template('login.html')
+        # Create Flask-Login user session object
+        user_obj = User(user['id'], user['full_name'], user['email'], user['role'])
+        login_user(user_obj)
+        session['user_name'] = user['full_name']
 
+        flash(f"Welcome back, {user['full_name']}!", "success")
+
+        # Role-based redirects
+        if user['role'] == 'superadmin':
+            return redirect(url_for('superadmin_dashboard'))
+        elif user['role'] == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        elif user['role'] == 'supplier':
+            return redirect(url_for('dashboard'))
+        else:
+            return redirect(url_for('dashboard'))  # ✅ Allow regular users
+
+    return render_template('login.html')
 # def generate_password_hash(password):
 #     raise NotImplementedError
 
@@ -315,24 +361,366 @@ def search():
 def logout():
     session.clear()
     flash("You have been logged out.", "info")
-    return redirect(url_for('login'))
-
-
+    return redirect(url_for('home'))
 
 class User(UserMixin):
-    def __init__(self, id, username):
+    def __init__(self, id, full_name, email=None, role='user'):
         self.id = id
-        self.username = username
+        self.full_name = full_name
+        self.email = email
+        self.role = role
+
+    def get_id(self):
+        return str(self.id)
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Use local fetch_user_by_id to retrieve user data
     user_data = fetch_user_by_id(user_id)
     if user_data:
-        # support different possible username fields stored in the user record
         username = user_data.get('username') or user_data.get('full_name') or user_data.get('email')
-        return User(user_data['id'], username)
+        email = user_data.get('email')
+        role = user_data.get('role') or 'user'   # <-- ensure role loads
+        return User(user_data['id'], username, email, role)
     return None
+
+# ---------- ADMIN ----------
+@app.route("/admin/dashboard")
+@admin_required
+def admin_dashboard():
+    users = get_all_users()
+    violations = get_violation_logs()
+    return render_template("admin_dashboard.html", users=users, violations=violations)
+
+# ---------- SUPERADMIN ----------
+@app.route("/superadmin/dashboard")
+@superadmin_required
+def superadmin_dashboard():
+    users = get_all_users()
+    audit_logs = get_audit_logs()
+    system_stats = get_system_stats()
+    return render_template("superadmin_dashboard.html",
+                           users=users, audit_logs=audit_logs, system_stats=system_stats)
+
+@app.route("/superadmin/promote", methods=["POST"])
+@superadmin_required
+def promote_user():
+    user_id = request.form["user_id"]
+    new_role = request.form["new_role"]
+    update_user_role(user_id, new_role)
+    flash("Role updated successfully.", "success")
+    return redirect(url_for("superadmin_dashboard"))
+
+@app.route('/all_users')
+@login_required
+def all_users():
+    if current_user.role != 'superadmin':
+        flash('Access denied: Super Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    query = request.args.get('q', '').strip().lower()
+    users = get_all_users()
+
+    if query:
+        users = [
+            user for user in users
+            if query in user['full_name'].lower()
+            or query in user['email'].lower()
+            or query in user['role'].lower()
+        ]
+
+    return render_template('superadmin/all_users.html', users=users, query=query)
+
+# ---------- ADMIN & SUPER ADMIN ROUTES ----------
+
+@app.route('/violation_logs')
+@login_required
+def violation_logs():
+    # Allow both Admin and Super Admin
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+    
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM violation_logs ORDER BY detected_at DESC")
+    logs = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    return render_template('superadmin/violation_logs.html', logs=logs)
+
+
+@app.route('/audit_logs')
+@login_required
+def audit_logs():
+    # Allow both Admin and Super Admin
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    logs = get_audit_logs()
+    return render_template('superadmin/audit_logs.html', logs=logs)
+
+
+@app.route('/system_stats')
+@login_required
+def system_stats():
+    # Allow both Admin and Super Admin
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    try:
+        # --- Get overall statistics ---
+        stats = get_system_stats() or {
+            'total_users': 0,
+            'total_sales': 0,
+            'total_revenue': 0.0
+        }
+
+        # --- Get revenue timeseries (for charts) ---
+        try:
+            revenue_labels, revenue_values = get_revenue_timeseries(days=30)
+        except Exception as e:
+            print("Revenue timeseries error:", e)
+            revenue_labels, revenue_values = [], []
+
+        # --- Get top products ---
+        try:
+            top_products = get_top_products()
+        except Exception as e:
+            print("Top products error:", e)
+            top_products = []
+
+        return render_template(
+            'superadmin/system_stats.html',
+            stats=stats,
+            revenue_labels=revenue_labels,
+            revenue_values=revenue_values,
+            top_products=top_products
+        )
+
+    except Exception as e:
+        print("System stats route error:", e)
+        flash('An error occurred while loading system statistics.', 'danger')
+        return redirect(url_for('dashboard'))
+
+@app.route('/update_role/<int:user_id>', methods=['POST'])
+@login_required
+def update_role(user_id):
+    if current_user.role != 'superadmin':
+        flash('Access denied: Super Admins only.', 'danger')
+        return redirect(url_for('all_users'))
+
+    new_role = request.form.get('role')
+
+    if not new_role:
+        flash('Please select a valid role.', 'warning')
+        return redirect(url_for('all_users'))
+
+    from database import update_user_role
+    update_user_role(user_id, new_role)
+    flash(f"User role updated to {new_role}.", "success")
+    return redirect(url_for('all_users'))
+
+# ---------- MANAGE PRODUCTS ----------
+@app.route('/products', methods=['GET', 'POST'])
+@login_required
+def manage_products():
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        name = request.form['name']
+        buying_price = request.form['buying_price']
+        selling_price = request.form['selling_price']
+        stock_quantity = request.form['stock_quantity']
+        insert_product(name, buying_price, selling_price, stock_quantity)
+        flash('✅ Product added successfully!', 'success')
+        return redirect(url_for('manage_products'))
+
+    products = fetch_data('products')
+    return render_template('admin/manage_products.html', products=products)
+
+
+@app.route('/products/delete/<int:product_id>')
+@login_required
+def delete_product(product_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM products WHERE id = %s", (product_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    flash('🗑️ Product deleted successfully!', 'info')
+    return redirect(url_for('manage_products'))
+
+
+# ---------- MANAGE SALES ----------
+@app.route('/sales', methods=['GET', 'POST'])
+@login_required
+def manage_sales():
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        product_id = request.form['product_id']
+        quantity = request.form['quantity']
+        insert_sales(product_id, quantity)
+        flash('✅ Sale recorded successfully!', 'success')
+        return redirect(url_for('manage_sales'))
+
+    sales = fetch_data('sales')
+    return render_template('admin/manage_sales.html', sales=sales)
+
+
+@app.route('/sales/delete/<int:sale_id>')
+@login_required
+def delete_sale(sale_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM sales WHERE id = %s", (sale_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    flash('🗑️ Sale deleted successfully!', 'info')
+    return redirect(url_for('manage_sales'))
+
+
+# ---------- MANAGE STOCK ----------
+@app.route('/stock', methods=['GET', 'POST'])
+@login_required
+def manage_stock():
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        product_id = request.form['product_id']
+        quantity_added = request.form['quantity_added']
+        insert_stock(product_id, quantity_added)
+        flash('✅ Stock updated successfully!', 'success')
+        return redirect(url_for('manage_stock'))
+
+    stock = fetch_data('stock')
+    return render_template('admin/manage_stock.html', stock=stock)
+
+
+@app.route('/stock/delete/<int:stock_id>')
+@login_required
+def delete_stock(stock_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM stock WHERE id = %s", (stock_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    flash('🗑️ Stock record deleted successfully!', 'info')
+    return redirect(url_for('manage_stock'))
+
+
+# ---------- VIEW PROFITS ----------
+@app.route('/profits')
+@login_required
+def view_profits():
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    profits = product_profit()
+    return render_template('view_profits.html', profits=profits)
+
+# ---------- EDIT PRODUCT ----------
+@app.route('/admin/products/edit/<int:product_id>', methods=['POST'])
+@login_required
+def edit_product(product_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    name = request.form['name']
+    buying_price = request.form['buying_price']
+    selling_price = request.form['selling_price']
+    stock_quantity = request.form['stock_quantity']
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE products 
+        SET name=%s, buying_price=%s, selling_price=%s, stock_quantity=%s 
+        WHERE id=%s
+    """, (name, buying_price, selling_price, stock_quantity, product_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    flash('Product updated successfully!', 'success')
+    return redirect(url_for('manage_products'))
+
+# ---------- EDIT SALE ----------
+@app.route('/admin/sales/edit/<int:sale_id>', methods=['POST'])
+@login_required
+def edit_sale(sale_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    product_id = request.form['product_id']
+    quantity = request.form['quantity']
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE sales 
+        SET product_id=%s, quantity=%s 
+        WHERE id=%s
+    """, (product_id, quantity, sale_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    flash('Sale updated successfully!', 'success')
+    return redirect(url_for('manage_sales'))
+
+# ---------- EDIT STOCK ----------
+@app.route('/admin/stock/edit/<int:stock_id>', methods=['POST'])
+@login_required
+def edit_stock(stock_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        flash('Access denied: Admins only.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    product_id = request.form['product_id']
+    quantity_added = request.form['quantity_added']
+
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE stock 
+        SET product_id=%s, quantity_added=%s 
+        WHERE id=%s
+    """, (product_id, quantity_added, stock_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    flash('Stock entry updated successfully!', 'success')
+    return redirect(url_for('manage_stock'))
+
 
 #  RUN APP 
 if __name__ == '__main__':

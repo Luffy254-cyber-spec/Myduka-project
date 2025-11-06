@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Super Admin Dashboard{% endblock %}
+{% block content %}
+<h2 class="text-center">🧠 Super Admin Dashboard</h2>
+<p class="text-center">System-wide insights, audit logs, and platform governance.</p>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-6">
+      <h4>📜 Audit Logs</h4>
+      <ul>
+        {% for log in audit_logs %}
+          <li>{{ log.action }} by {{ log.actor }} at {{ log.timestamp }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h4>📊 System Stats</h4>
+      <ul>
+        <li>Total Users: {{ system_stats.total_users }}</li>
+        <li>Total Violations: {{ system_stats.total_violations }}</li>
+        <liTotal Admins: {{ system_stats.total_admins }}</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

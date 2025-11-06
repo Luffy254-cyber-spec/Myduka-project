@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h2 class="text-center mb-3">🛠️ Admin Dashboard</h2>
+  <p class="text-center text-muted">Manage users, monitor sales, stock, and profits.</p>
+
+  <div class="row g-4 mt-4">
+
+    <!-- Users Section -->
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h4 class="card-title mb-3">👥 Registered Users</h4>
+          {% if users %}
+          <ul class="list-group list-group-flush">
+            {% for user in users %}
+            <li class="list-group-item">
+              {{ user.fullname }} ({{ user.email }})
+              {% if user.role %}
+              <span class="badge bg-info text-dark ms-2">{{ user.role }}</span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">No users found.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Violations -->
+    <div class="col-md-6">
+      <div class="card shadow-sm border-0">
+        <div class="card-body">
+          <h4 class="card-title mb-3">🚨 Violations</h4>
+          {% if violations %}
+          <ul class="list-group list-group-flush">
+            {% for v in violations %}
+              <li class="list-group-item">
+                {{ v.email }} — {{ v.reason }}
+                <small class="text-muted">({{ v.timestamp }})</small>
+              </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted">No violations recorded.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Sales, Products, Profit -->
+  <div class="card shadow-sm border-0 mt-4">
+    <div class="card-body">
+      <h4 class="card-title mb-3">💼 Business Management</h4>
+      <div class="d-flex flex-wrap gap-3">
+        <a href="{{ url_for('manage_products') }}" class="btn btn-outline-primary">
+          🧾 Manage Products
+        </a>
+        <a href="{{ url_for('manage_sales') }}" class="btn btn-outline-success">
+          💰 Manage Sales
+        </a>
+        <a href="{{ url_for('manage_stock') }}" class="btn btn-outline-warning">
+          📦 Manage Stock
+        </a>
+        <a href="{{ url_for('view_profits') }}" class="btn btn-outline-info">
+          📈 View Profits
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
