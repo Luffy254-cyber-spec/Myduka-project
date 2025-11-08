@@ -2,12 +2,19 @@
 {% block title %}{{ _('Too Many Attempts') }}{% endblock %}
 {% block content %}
 <style>
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
   .error-container {
+    flex: 1;
     text-align: center;
     padding: 4rem 2rem;
     animation: fadeBounce 1s ease-out;
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
   }
 
   .error-code {
@@ -26,6 +33,13 @@
   .error-description {
     font-size: 1rem;
     color: #6c757d;
+    margin-bottom: 1rem;
+  }
+
+  .countdown-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #dc3545;
     margin-bottom: 2rem;
   }
 
@@ -102,7 +116,10 @@
   <div class="error-message">{{ _('Too Many Attempts') }}</div>
   <div class="error-description">
     {{ _("You've tried too many times. For your security, access is temporarily locked.") }}<br>
-    {{ _("Please wait a few minutes before trying again.") }}
+    {{ _("Please wait a few moments before trying again.") }}
+  </div>
+  <div class="countdown-text">
+    {{ _("Redirecting to login in") }} <span id="countdown">30</span> {{ _("seconds...") }}
   </div>
   <div class="error-actions">
     <a href="/" class="btn-wait"><i class="bi bi-clock-history me-1"></i> {{ _('Wait & Retry') }}</a>
@@ -113,15 +130,26 @@
 <!-- 🎬 Lottie Script -->
 <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
-<!-- 🔊 Mascot Interaction -->
+<!-- 🔊 Mascot Interaction + Countdown -->
 <script>
   const mascot = document.getElementById('mascot');
   const lockSound = document.getElementById('lockSound');
+  const countdown = document.getElementById('countdown');
 
   mascot.addEventListener('mouseenter', () => {
     lockSound.muted = false;
     lockSound.currentTime = 0;
     lockSound.play();
   });
+
+  let seconds = 30;
+  const timer = setInterval(() => {
+    seconds--;
+    countdown.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      window.location.href = "/login";
+    }
+  }, 1000);
 </script>
 {% endblock %}

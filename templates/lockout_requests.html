@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Lockout Requests{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">Pending Lockout Requests</h2>
+    {% if requests %}
+    <table class="table table-bordered table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Message</th>
+                <th>Submitted</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requests %}
+            <tr>
+                <td>{{ req['id'] }}</td>
+                <td>{{ req['email'] }}</td>
+                <td>{{ req['message'] }}</td>
+                <td>{{ req['created_at'] }}</td>
+                <td>
+                <td>
+                    <a href="{{ url_for('unlock_user', request_id=req['id']) }}" class="btn btn-success btn-sm me-2">
+                        <i class="bi bi-unlock me-1"></i> Approve
+                    </a>
+                    <a href="{{ url_for('reject_user', request_id=req['id']) }}" class="btn btn-danger btn-sm">
+                        <i class="bi bi-x-circle me-1"></i> Reject
+                    </a>
+                </td>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">No pending lockout requests.</p>
+    {% endif %}
+</div>
+{% endblock %}

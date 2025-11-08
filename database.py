@@ -1,10 +1,20 @@
-from flask import flash, redirect, url_for
+from flask import flash, g, redirect, url_for
 from flask_login import current_user
 import psycopg2
 from datetime import datetime
 import psycopg2.extras
 from functools import wraps
 from psycopg2.extras import RealDictCursor
+
+# Database configuration
+DB_CONFIG = {
+    "host": "localhost",
+    "port": 5432,
+    "user": "postgres",
+    "password": "12199",
+    "dbname": "myduka_db",
+    "cursor_factory": psycopg2.extras.RealDictCursor
+}
 # connect to PostgreSQL
 
 def get_connection():
@@ -716,6 +726,76 @@ def delete_sale_by_id(sale_id):
     conn.commit()
     cur.close()
     conn.close()
+
+def log_action(user_id, actor_email, action, context, target_email=None, details=None):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO audit_logs (user_id, actor_email, action, context, target_email, details)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (user_id, actor_email, action, context, target_email, details))
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+
+
+def get_db():
+    if 'db' not in g:
+        g.db = psycopg2.connect(**DB_CONFIG)
+    return g.db
+
+def get_cursor():
+    return get_db().cursor(cursor_factory=RealDictCursor)
+
+def get_pending_lockout_requests():
+    cur = get_cursor()
+    cur.execute("SELECT * FROM lockout_requests WHERE status = 'pending' ORDER BY created_at DESC")
+    return cur.fetchall()
+
+def get_rejected_lockout_requests():
+    cur = get_cursor()
+    cur.execute("SELECT * FROM lockout_requests WHERE status = 'rejected' ORDER BY created_at DESC")
+    return cur.fetchall()
+
+def get_lockout_request_by_id(request_id):
+    cur = get_cursor()
+    cur.execute("SELECT * FROM lockout_requests WHERE id = %s", (request_id,))
+    return cur.fetchone()
+
+def reject_lockout_request(request_id, reason):
+    cur = get_cursor()
+    cur.execute("UPDATE lockout_requests SET status = 'rejected', rejection_reason = %s WHERE id = %s", (reason, request_id))
+    get_db().commit()
+
+def restore_lockout_request(request_id):
+    cur = get_cursor()
+    cur.execute("UPDATE lockout_requests SET status = 'pending', rejection_reason = NULL WHERE id = %s", (request_id,))
+    get_db().commit()
+
+def log_action(user_id, actor_email, action, context, target_email=None, details=None):
+    cur = get_cursor()
+    cur.execute("""
+        INSERT INTO audit_logs (user_id, actor_email, action, context, target_email, details)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (user_id, actor_email, action, context, target_email, details))
+    get_db().commit()
+
+def count_pending_lockouts():
+    cur = get_cursor()
+    cur.execute("SELECT COUNT(*) FROM lockout_requests WHERE status = 'pending'")
+    return cur.fetchone()['count']
+
+def count_rejected_lockouts():
+    cur = get_cursor()
+    cur.execute("SELECT COUNT(*) FROM lockout_requests WHERE status = 'rejected'")
+    return cur.fetchone()['count']
+
+def quick_unlock(email):
+    cur = get_cursor()
+    cur.execute("DELETE FROM lockout_requests WHERE email = %s", (email,))
+    get_db().commit()
+
     
 if __name__ == "__main__":
     create_tables()

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from functools import wraps
 import random
-from flask import Flask, flash, render_template, request, redirect, session, url_for
+from flask import Flask, abort, flash, render_template, request, redirect, session, url_for
 from flask_mail import Message, Mail
-from database import calculate_total_loss, calculate_total_profit, calculate_total_sales, calculate_total_stock, count_products, count_sales_entries, create_user, daily_profit, daily_sales, delete_product_by_id, delete_sale_by_id, delete_stock_by_id, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_all_users, get_audit_logs, get_connection, get_recent_sales, get_revenue_timeseries, get_system_stats, get_top_products, get_top_products_by_revenue, get_user_by_email, get_violation_logs, insert_product, insert_sales, insert_stock, log_otp_attempt, product_profit, product_sales, save_otp, search_everything, update_password, update_product, update_sale_quantity, update_stock_quantity, update_user_role, verify_otp
+from database import calculate_total_loss, calculate_total_profit, calculate_total_sales, calculate_total_stock, count_pending_lockouts, count_products, count_rejected_lockouts, count_sales_entries, create_user, daily_profit, daily_sales, delete_product_by_id, delete_sale_by_id, delete_stock_by_id, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_all_users, get_audit_logs, get_connection, get_lockout_request_by_id, get_pending_lockout_requests, get_recent_sales, get_rejected_lockout_requests, get_revenue_timeseries, get_system_stats, get_top_products, get_top_products_by_revenue, get_user_by_email, get_violation_logs, insert_product, insert_sales, insert_stock, log_action, log_otp_attempt, product_profit, product_sales, quick_unlock, reject_lockout_request, restore_lockout_request, save_otp, search_everything, update_password, update_product, update_sale_quantity, update_stock_quantity, update_user_role, verify_otp
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, current_user, login_required
 from flask_login import UserMixin
@@ -15,6 +15,25 @@ from wtforms.validators import DataRequired, Email
 from flask_babel import Babel, gettext
 import time
 from flask import session
+import time
+from flask import session
+from flask import Flask, g
+
+MAX_ATTEMPTS = 5
+LOCKOUT_SECONDS = 30  # You can change to 300 for 5 minutes
+
+def is_locked_out():
+    lockout = session.get("lockout_until")
+    return lockout and time.time() < lockout
+
+def increment_attempts():
+    session["attempts"] = session.get("attempts", 0) + 1
+    if session["attempts"] >= MAX_ATTEMPTS:
+        session["lockout_until"] = time.time() + LOCKOUT_SECONDS
+
+def reset_attempts():
+    session.pop("attempts", None)
+    session.pop("lockout_until", None)
 
 MAX_ATTEMPTS = 5
 LOCKOUT_SECONDS = 300  # 5 minutes
@@ -222,28 +241,41 @@ def dashboard():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if is_locked_out():
+        log_action(
+            user_id=None,
+            actor_email=request.form.get('email', 'unknown'),
+            action="Login blocked due to lockout",
+            context="login",
+            target_email=request.form.get('email', 'unknown'),
+            details="User exceeded max login attempts"
+        )
         return render_template("429.html"), 429
 
     if request.method == 'POST':
         email = request.form['email'].strip().lower()
         password = request.form['password']
-
         user = get_user_by_email(email)
 
-        # Validate user credentials
         if not user or not check_password_hash(user['password_hash'], password):
             increment_attempts()
             flash("Invalid email or password.", "danger")
             return redirect(url_for('login'))
 
-        # Successful login
         reset_attempts()
         user_obj = User(user['id'], user['full_name'], user['email'], user['role'])
         login_user(user_obj)
         session['user_name'] = user['full_name']
         flash(f"Welcome back, {user['full_name']}!", "success")
 
-        # Role-based redirects
+        log_action(
+            user_id=user['id'],
+            actor_email=user['email'],
+            action="Successful login",
+            context="login",
+            target_email=user['email'],
+            details="User logged in successfully"
+        )
+
         if user['role'] == 'superadmin':
             return redirect(url_for('superadmin_dashboard'))
         elif user['role'] == 'admin':
@@ -433,7 +465,16 @@ def load_user(user_id):
 def admin_dashboard():
     users = get_all_users()
     violations = get_violation_logs()
-    return render_template("admin_dashboard.html", users=users, violations=violations)
+    pending_count = count_pending_lockouts()
+    rejected_count = count_rejected_lockouts()
+
+    return render_template(
+        "admin_dashboard.html",
+        users=users,
+        violations=violations,
+        pending_count=pending_count,
+        rejected_count=rejected_count
+    )
 
 # ---------- SUPERADMIN ----------
 @app.route("/superadmin/dashboard")
@@ -442,9 +483,17 @@ def superadmin_dashboard():
     users = get_all_users()
     audit_logs = get_audit_logs()
     system_stats = get_system_stats()
-    return render_template("superadmin_dashboard.html",
-                           users=users, audit_logs=audit_logs, system_stats=system_stats)
+    pending_count = count_pending_lockouts()
+    rejected_count = count_rejected_lockouts()
 
+    return render_template(
+        "superadmin_dashboard.html",
+        users=users,
+        audit_logs=audit_logs,
+        system_stats=system_stats,
+        pending_count=pending_count,
+        rejected_count=rejected_count
+    )
 @app.route("/superadmin/promote", methods=["POST"])
 @superadmin_required
 def promote_user():
@@ -648,6 +697,101 @@ def page_not_found(e):
 def too_many_attempts(e):
     return render_template("429.html"), 429
 
+@app.route('/report-lockout', methods=['GET', 'POST'])
+def report_lockout():
+    if request.method == 'POST':
+        email = request.form['email'].strip().lower()
+        message = request.form['message'].strip()
+
+        # Log or send to admin (example: print or save to DB)
+        print(f"Lockout report from {email}: {message}")
+
+        flash("Your report has been submitted to the admin for review.", "success")
+        return redirect(url_for('login'))
+
+    return render_template('report_lockout.html')
+
+@app.route('/lockout-requests')
+@login_required
+def lockout_requests():
+    if current_user.role not in ['admin', 'superadmin']:
+        abort(403)
+    requests = get_pending_lockout_requests()
+    return render_template('lockout_requests.html', requests=requests)
+
+@app.route('/reject-user/<int:request_id>', methods=['GET', 'POST'])
+@login_required
+def reject_user(request_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        abort(403)
+
+    if request.method == 'POST':
+        reason = request.form['reason'].strip()
+        req = get_lockout_request_by_id(request_id)
+        email = req['email']
+
+        reject_lockout_request(request_id, reason)
+
+        msg = Message("Lockout Request Rejected",
+                      recipients=[email],
+                      body=f"Your request has been rejected.\n\nReason: {reason}\n\nPlease re-register or appeal for account unblock.")
+        mail.send(msg)
+
+        log_action(current_user.id, current_user.email, "Rejected lockout request", "lockout_requests", email, reason)
+
+        flash("Request rejected and user notified.", "warning")
+        return redirect(url_for('lockout_requests'))
+
+    request_data = get_lockout_request_by_id(request_id)
+    return render_template("reject_lockout.html", request=request_data)
+
+@app.route('/lockout-rejected')
+@login_required
+def lockout_rejected():
+    if current_user.role not in ['admin', 'superadmin']:
+        abort(403)
+    requests = get_rejected_lockout_requests()
+    return render_template('lockout_rejected.html', requests=requests)
+
+@app.route('/restore-request/<int:request_id>')
+@login_required
+def restore_request(request_id):
+    if current_user.role not in ['admin', 'superadmin']:
+        abort(403)
+
+    restore_lockout_request(request_id)
+    email = get_lockout_request_by_id(request_id)['email']
+
+    log_action(current_user.id, current_user.email, "Restored lockout request", "lockout_requests", email, "Request moved back to pending for re-review")
+
+    flash("Request restored for re-review.", "info")
+    return redirect(url_for('lockout_rejected'))
+
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+@app.route('/quick-unlock/<email>')
+@login_required
+def quick_unlock_user(email):
+    if current_user.role != 'superadmin':
+        abort(403)
+
+    quick_unlock(email)
+
+    log_action(
+        user_id=current_user.id,
+        actor_email=current_user.email,
+        action="Quick unlocked user",
+        context="lockout_requests",
+        target_email=email,
+        details="Superadmin manually removed lockout request"
+    )
+
+    flash(f"{email} has been unlocked.", "success")
+    return redirect(url_for('lockout_requests'))
 
 #  RUN APP 
 if __name__ == '__main__':

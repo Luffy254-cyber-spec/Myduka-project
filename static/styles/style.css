@@ -921,3 +921,8 @@ body {
 #retryBtn:hover {
   background-color: #1a5edc;
 }
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}

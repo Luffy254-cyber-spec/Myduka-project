@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Report Lockout') }}{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <h2 class="mb-4 text-center">{{ _('Request Unlock') }}</h2>
+  <form method="POST" action="{{ url_for('report_lockout') }}" class="mx-auto" style="max-width: 500px;">
+    <div class="mb-3">
+      <label for="email" class="form-label">{{ _('Your Email') }}</label>
+      <input type="email" name="email" id="email" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label for="message" class="form-label">{{ _('Message to Admin') }}</label>
+      <textarea name="message" id="message" rows="4" class="form-control" placeholder="{{ _('Explain your situation...') }}" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary w-100">
+      <i class="bi bi-send me-1"></i> {{ _('Submit Request') }}
+    </button>
+  </form>
+</div>
+{% endblock %}

@@ -4,11 +4,31 @@
 {% block content %}
 <div class="container my-4">
   <h2 class="text-center mb-3">🛠️ Admin Dashboard</h2>
-  <p class="text-center text-muted">Manage users, monitor sales, stock, and profits.</p>
+  <p class="text-center text-muted">Manage users, monitor sales, stock, profits, and governance tools.</p>
 
-  <div class="row g-4 mt-4">
+  <!-- 🔐 Lockout Stats -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="alert alert-warning d-flex align-items-center">
+        <i class="bi bi-person-lock me-2 fs-4"></i>
+        <div>
+          <strong>{{ pending_count }}</strong> lockout request{{ pending_count != 1 and 's' or '' }} pending review
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="alert alert-danger d-flex align-items-center">
+        <i class="bi bi-person-x me-2 fs-4"></i>
+        <div>
+          <strong>{{ rejected_count }}</strong> request{{ rejected_count != 1 and 's' or '' }} rejected
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- Users Section -->
+  <div class="row g-4 mt-2">
+
+    <!-- 👥 Users Section -->
     <div class="col-md-6">
       <div class="card shadow-sm border-0">
         <div class="card-body">
@@ -16,10 +36,17 @@
           {% if users %}
           <ul class="list-group list-group-flush">
             {% for user in users %}
-            <li class="list-group-item">
-              {{ user.fullname }} ({{ user.email }})
-              {% if user.role %}
-              <span class="badge bg-info text-dark ms-2">{{ user.role }}</span>
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                {{ user.fullname }} ({{ user.email }})
+                {% if user.role %}
+                <span class="badge bg-info text-dark ms-2">{{ user.role }}</span>
+                {% endif %}
+              </div>
+              {% if current_user.role == 'superadmin' %}
+              <a href="{{ url_for('quick_unlock_user', email=user.email) }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-unlock-fill me-1"></i> Quick Unlock
+              </a>
               {% endif %}
             </li>
             {% endfor %}
@@ -31,49 +58,49 @@
       </div>
     </div>
 
-    <!-- Violations -->
+    <!-- 🚨 Violations & Lockouts -->
     <div class="col-md-6">
       <div class="card shadow-sm border-0">
         <div class="card-body">
-          <h4 class="card-title mb-3">🚨 Violations</h4>
+          <h4 class="card-title mb-3">🚨 Violations & Lockouts</h4>
           {% if violations %}
-          <ul class="list-group list-group-flush">
+          <ul class="list-group list-group-flush mb-3">
             {% for v in violations %}
-              <li class="list-group-item">
-                {{ v.email }} — {{ v.reason }}
-                <small class="text-muted">({{ v.timestamp }})</small>
-              </li>
+            <li class="list-group-item">
+              {{ v.email }} — {{ v.reason }}
+              <small class="text-muted">({{ v.timestamp }})</small>
+            </li>
             {% endfor %}
           </ul>
           {% else %}
           <p class="text-muted">No violations recorded.</p>
           {% endif %}
+
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('lockout_requests') }}" class="btn btn-outline-warning">
+              <i class="bi bi-person-lock me-1"></i> Review Lockout Requests
+            </a>
+            <a href="{{ url_for('lockout_rejected') }}" class="btn btn-outline-danger">
+              <i class="bi bi-person-x me-1"></i> View Rejected Requests
+            </a>
+          </div>
         </div>
       </div>
     </div>
 
   </div>
 
-  <!-- Sales, Products, Profit -->
+  <!-- 💼 Business Management -->
   <div class="card shadow-sm border-0 mt-4">
     <div class="card-body">
       <h4 class="card-title mb-3">💼 Business Management</h4>
       <div class="d-flex flex-wrap gap-3">
-        <a href="{{ url_for('products') }}" class="btn btn-outline-primary">
-          🧾 Manage Products
-        </a>
-        <a href="{{ url_for('sales') }}" class="btn btn-outline-success">
-          💰 Manage Sales
-        </a>
-        <a href="{{ url_for('stock') }}" class="btn btn-outline-warning">
-          📦 Manage Stock
-        </a>
-        <a href="{{ url_for('profit') }}" class="btn btn-outline-info">
-          📈 View Profits
-        </a>
+        <a href="{{ url_for('products') }}" class="btn btn-outline-primary">🧾 Manage Products</a>
+        <a href="{{ url_for('sales') }}" class="btn btn-outline-success">💰 Manage Sales</a>
+        <a href="{{ url_for('stock') }}" class="btn btn-outline-warning">📦 Manage Stock</a>
+        <a href="{{ url_for('profit') }}" class="btn btn-outline-info">📈 View Profits</a>
       </div>
     </div>
   </div>
-
 </div>
 {% endblock %}
