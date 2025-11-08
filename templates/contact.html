@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Contact Us{% endblock %}
+{% block content %}
+<style>
+    .social-section {
+        margin-top: 2rem;
+    }
+
+    .social-label {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+
+    .social-icons a {
+        position: relative;
+        display: inline-block;
+        margin-right: 15px;
+        font-size: 1.5rem;
+        color: #555;
+        transition: transform 0.3s ease;
+    }
+
+    .social-icons a:hover {
+        transform: scale(1.2);
+        animation: heartbeat 0.6s infinite;
+        color: #ffc107;
+    }
+
+    .social-icons a .app-name {
+        position: absolute;
+        top: -28px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.75rem;
+        background-color: #343a40;
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 4px;
+        opacity: 0;
+        pointer-events: none;
+        animation: none;
+        transition: opacity 0.3s ease;
+    }
+
+    .social-icons a:hover .app-name {
+        opacity: 1;
+        animation: fadeBounce 0.6s ease forwards;
+    }
+
+    @keyframes fadeBounce {
+        0% {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+        }
+
+        50% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0px);
+        }
+
+        70% {
+            transform: translateX(-50%) translateY(-4px);
+        }
+
+        100% {
+            transform: translateX(-50%) translateY(0px);
+        }
+    }
+
+    .call-btn {
+        margin-top: 1rem;
+        display: inline-block;
+        background-color: #28a745;
+        color: #fff;
+        padding: 10px 16px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    .call-btn:hover {
+        background-color: #218838;
+        animation: heartbeat 0.6s infinite;
+    }
+</style>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        <h2 class="mb-4 text-primary">
+            <i class="bi bi-envelope-fill me-2"></i> Contact Support
+        </h2>
+        <p>If you have questions, feedback, or need help, please reach out using the form below:</p>
+
+        <form action="https://api.web3forms.com/submit" method="POST" class="needs-validation" novalidate>
+            <!-- ✅ Access Key -->
+            <input type="hidden" name="access_key" value="d0b81fc5-fbc0-4fe7-a1ea-aa80fac1507e">
+
+            <!-- ✅ Name -->
+            <div class="mb-3">
+                <label for="name" class="form-label">Your Name</label>
+                <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+
+            <!-- ✅ Email -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Your Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+
+            <!-- ✅ Message -->
+            <div class="mb-3">
+                <label for="message" class="form-label">Message</label>
+                <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+            </div>
+
+            <!-- ✅ Honeypot Spam Protection -->
+            <input type="checkbox" name="botcheck" style="display: none;">
+
+            <!-- ✅ Optional Redirect -->
+            <!-- <input type="hidden" name="redirect" value="https://myduka.com/thank-you"> -->
+
+            <!-- ✅ Submit Button -->
+            <button type="submit" class="btn btn-warning">
+                <i class="bi bi-send-fill me-1"></i> Send Message
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- 📱 Call Button -->
+<a href="tel:+254739645084" class="call-btn"><i class="bi bi-telephone-fill me-1"></i> Call Support</a>
+
+<!-- 🌐 Social Media -->
+<div class="social-section">
+    <div class="social-label">Follow us on:</div>
+    <div class="social-icons">
+        <a href="https://facebook.com/myduka" target="_blank">
+            <span class="app-name">Facebook</span>
+            <i class="bi bi-facebook"></i>
+        </a>
+        <a href="https://twitter.com/myduka" target="_blank">
+            <span class="app-name">Twitter</span>
+            <i class="bi bi-twitter"></i>
+        </a>
+        <a href="https://linkedin.com/company/myduka" target="_blank">
+            <span class="app-name">LinkedIn</span>
+            <i class="bi bi-linkedin"></i>
+        </a>
+        <a href="https://instagram.com/myduka" target="_blank">
+            <span class="app-name">Instagram</span>
+            <i class="bi bi-instagram"></i>
+        </a>
+        <a href="https://youtube.com/myduka" target="_blank">
+            <span class="app-name">YouTube</span>
+            <i class="bi bi-youtube"></i>
+        </a>
+    </div>
+
+    <div class="social-label mt-4">Reach out to us:</div>
+    <div class="social-icons">
+        <a href="https://wa.me/254739645084" target="_blank">
+            <span class="app-name">WhatsApp</span>
+            <i class="bi bi-whatsapp"></i>
+        </a>
+        <a href="mailto:marcellinostephen052@gmail.com">
+            <span class="app-name">Email</span>
+            <i class="bi bi-envelope-fill"></i>
+        </a>
+
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}

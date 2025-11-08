@@ -28,6 +28,7 @@
       <th>Product</th>
       <th>Quantity</th>
       <th>Restock Date</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -38,9 +39,50 @@
         {% set product = products | selectattr("id", "equalto", s.pid) | list | first %}
         {{ product.name if product else 'Unknown Product' }}
       </td>
-      <td>{{ s.stock_quantity }}</td>
+      <td>
+        {% if s.stock_quantity == 0 %}
+          <span class="badge bg-danger">Out of Stock</span>
+        {% else %}
+          <span class="badge bg-success">{{ s.stock_quantity }}</span>
+        {% endif %}
+      </td>
       <td>{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+      <td class="d-flex gap-2">
+        <!-- Edit Button -->
+        <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editStockModal{{ s.id }}">
+          <i class="bi bi-pencil-square"></i>
+        </button>
+
+        <!-- Delete Form -->
+        <form method="post" action="{{ url_for('delete_stock', stock_id=s.id) }}" onsubmit="return confirm('Delete this stock entry?');">
+          <button type="submit" class="btn btn-sm btn-danger">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </td>
     </tr>
+
+    <!-- ---------------- Edit Stock Modal ---------------- -->
+    <div class="modal fade" id="editStockModal{{ s.id }}" tabindex="-1" aria-labelledby="editStockLabel{{ s.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <form method="post" action="{{ url_for('edit_stock', stock_id=s.id) }}">
+            <div class="modal-header bg-warning text-dark">
+              <h5 class="modal-title" id="editStockLabel{{ s.id }}">Edit Stock</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <label for="quantity{{ s.id }}" class="form-label">Quantity</label>
+              <input class="form-control" type="number" name="quantity" id="quantity{{ s.id }}" value="{{ s.stock_quantity }}" required>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success">Save Changes</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
     {% endfor %}
   </tbody>
 </table>
@@ -56,7 +98,6 @@
         </div>
 
         <div class="modal-body">
-
           <!-- Hidden Product Dropdown -->
           <div class="mb-3" style="display: none;">
             <label for="pid">Choose a product:</label>
@@ -82,10 +123,8 @@
           <!-- Quantity Input -->
           <div class="mb-3">
             <label for="quantity" class="form-label">Quantity</label>
-            <input class="form-control" type="number" name="quantity" id="quantity" placeholder="Enter quantity"
-              required>
+            <input class="form-control" type="number" name="quantity" id="quantity" placeholder="Enter quantity" required>
           </div>
-
         </div>
 
         <div class="modal-footer">

@@ -9,7 +9,6 @@
     <i class="bi bi-plus-circle me-1"></i> Add Product
   </button>
 
-
   <!-- Search Bar on Right -->
   <form method="get" action="/products" class="d-flex">
     <input type="text" name="search" placeholder="Search by name..." value="{{ request.args.get('search', '') }}"
@@ -27,6 +26,7 @@
       <th>Name</th>
       <th>Buying Price</th>
       <th>Selling Price</th>
+      <th>Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -36,7 +36,43 @@
       <td>{{ p.name }}</td>
       <td>{{ p.buying_price }}</td>
       <td>{{ p.selling_price }}</td>
+      <td class="d-flex gap-2">
+        <!-- Edit Button -->
+        <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editProductModal{{ p.id }}">
+          <i class="bi bi-pencil-square"></i>
+        </button>
+
+        <!-- Delete Form -->
+        <form method="post" action="{{ url_for('delete_product', product_id=p.id) }}" onsubmit="return confirm('Delete this product?');">
+          <button type="submit" class="btn btn-sm btn-danger">
+            <i class="bi bi-trash"></i>
+          </button>
+        </form>
+      </td>
     </tr>
+
+    <!-- ---------------- Edit Product Modal ---------------- -->
+    <div class="modal fade" id="editProductModal{{ p.id }}" tabindex="-1" aria-labelledby="editProductLabel{{ p.id }}" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form method="post" action="{{ url_for('edit_product', product_id=p.id) }}">
+            <div class="modal-header">
+              <h5 class="modal-title" id="editProductLabel{{ p.id }}">Edit Product</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <input class="form-control mb-2" type="text" name="name" value="{{ p.name }}" required>
+              <input class="form-control mb-2" type="number" name="buying_price" value="{{ p.buying_price }}" required>
+              <input class="form-control mb-2" type="number" name="selling_price" value="{{ p.selling_price }}" required>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-success">Save Changes</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
     {% endfor %}
   </tbody>
 </table>

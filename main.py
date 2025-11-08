@@ -3,11 +3,44 @@ from functools import wraps
 import random
 from flask import Flask, flash, render_template, request, redirect, session, url_for
 from flask_mail import Message, Mail
-from database import calculate_total_loss, calculate_total_profit, calculate_total_sales, calculate_total_stock, count_products, count_sales_entries, create_user, daily_profit, daily_sales, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_all_users, get_audit_logs, get_connection, get_recent_sales, get_revenue_timeseries, get_system_stats, get_top_products, get_top_products_by_revenue, get_user_by_email, get_violation_logs, insert_product, insert_sales, insert_stock, log_otp_attempt, product_profit, product_sales, save_otp, search_everything, update_password, update_user_role, verify_otp
+from database import calculate_total_loss, calculate_total_profit, calculate_total_sales, calculate_total_stock, count_products, count_sales_entries, create_user, daily_profit, daily_sales, delete_product_by_id, delete_sale_by_id, delete_stock_by_id, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_all_users, get_audit_logs, get_connection, get_recent_sales, get_revenue_timeseries, get_system_stats, get_top_products, get_top_products_by_revenue, get_user_by_email, get_violation_logs, insert_product, insert_sales, insert_stock, log_otp_attempt, product_profit, product_sales, save_otp, search_everything, update_password, update_product, update_sale_quantity, update_stock_quantity, update_user_role, verify_otp
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_login import LoginManager, current_user, login_required, logout_user
+from flask_login import LoginManager, current_user, login_required
 from flask_login import UserMixin
 from flask_login import login_user
+from datetime import datetime
+from flask_wtf import FlaskForm
+from wtforms import StringField, TextAreaField, SubmitField
+from wtforms.validators import DataRequired, Email
+from flask_babel import Babel, gettext
+import time
+from flask import session
+
+MAX_ATTEMPTS = 5
+LOCKOUT_SECONDS = 300  # 5 minutes
+
+def is_locked_out():
+    lockout = session.get("lockout_until")
+    return lockout and time.time() < lockout
+
+def increment_attempts():
+    session["attempts"] = session.get("attempts", 0) + 1
+    if session["attempts"] >= MAX_ATTEMPTS:
+        session["lockout_until"] = time.time() + LOCKOUT_SECONDS
+
+def reset_attempts():
+    session.pop("attempts", None)
+    session.pop("lockout_until", None)
+
+
+
+
+
+class ContactForm(FlaskForm):
+    name = StringField('Your Name', validators=[DataRequired()])
+    email = StringField('Your Email', validators=[DataRequired(), Email()])
+    message = TextAreaField('Message', validators=[DataRequired()])
+    submit = SubmitField('Send Message')
 
 
 # import os
@@ -19,8 +52,10 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'  # Redirects to this route if not logged in
 app.secret_key = 'your-unique-secret-key'  # 🔐 Add this line
 # app.secret_key = os.environ.get('SECRET_KEY', 'fallback-dev-key')
-# ROUTES 
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+babel = Babel(app)
 
+# ROUTES 
 # ---------- DECORATORS ----------
 def admin_required(f):
     @wraps(f)
@@ -186,6 +221,9 @@ def dashboard():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if is_locked_out():
+        return render_template("429.html"), 429
+
     if request.method == 'POST':
         email = request.form['email'].strip().lower()
         password = request.form['password']
@@ -194,14 +232,15 @@ def login():
 
         # Validate user credentials
         if not user or not check_password_hash(user['password_hash'], password):
+            increment_attempts()
             flash("Invalid email or password.", "danger")
             return redirect(url_for('login'))
 
-        # Create Flask-Login user session object
+        # Successful login
+        reset_attempts()
         user_obj = User(user['id'], user['full_name'], user['email'], user['role'])
         login_user(user_obj)
         session['user_name'] = user['full_name']
-
         flash(f"Welcome back, {user['full_name']}!", "success")
 
         # Role-based redirects
@@ -212,14 +251,15 @@ def login():
         elif user['role'] == 'supplier':
             return redirect(url_for('dashboard'))
         else:
-            return redirect(url_for('dashboard'))  # ✅ Allow regular users
+            return redirect(url_for('dashboard'))
 
     return render_template('login.html')
-# def generate_password_hash(password):
-#     raise NotImplementedError
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if is_locked_out():
+        return render_template("429.html"), 429
+
     if request.method == 'POST':
         full_name = request.form['full_name'].strip()
         email = request.form['email'].strip().lower()
@@ -228,18 +268,22 @@ def register():
 
         # Validation
         if not full_name or not email or not password or not confirm:
+            increment_attempts()
             flash("All fields are required.", "danger")
             return redirect(url_for('register'))
 
         if password != confirm:
+            increment_attempts()
             flash("Passwords do not match.", "danger")
             return redirect(url_for('register'))
 
         if get_user_by_email(email):
+            increment_attempts()
             flash("Email already registered. Please log in.", "warning")
             return redirect(url_for('login'))
 
         # Create user
+        reset_attempts()
         hashed_password = generate_password_hash(password)
         create_user(full_name, email, hashed_password)
         flash("Account created successfully! You can now log in.", "success")
@@ -523,203 +567,86 @@ def update_role(user_id):
     flash(f"User role updated to {new_role}.", "success")
     return redirect(url_for('all_users'))
 
-# ---------- MANAGE PRODUCTS ----------
-@app.route('/products', methods=['GET', 'POST'])
-@login_required
-def manage_products():
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        name = request.form['name']
-        buying_price = request.form['buying_price']
-        selling_price = request.form['selling_price']
-        stock_quantity = request.form['stock_quantity']
-        insert_product(name, buying_price, selling_price, stock_quantity)
-        flash('✅ Product added successfully!', 'success')
-        return redirect(url_for('manage_products'))
-
-    products = fetch_data('products')
-    return render_template('admin/manage_products.html', products=products)
 
 
-@app.route('/products/delete/<int:product_id>')
-@login_required
-def delete_product(product_id):
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM products WHERE id = %s", (product_id,))
-    conn.commit()
-    cur.close()
-    conn.close()
-    flash('🗑️ Product deleted successfully!', 'info')
-    return redirect(url_for('manage_products'))
-
-
-# ---------- MANAGE SALES ----------
-@app.route('/sales', methods=['GET', 'POST'])
-@login_required
-def manage_sales():
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        product_id = request.form['product_id']
-        quantity = request.form['quantity']
-        insert_sales(product_id, quantity)
-        flash('✅ Sale recorded successfully!', 'success')
-        return redirect(url_for('manage_sales'))
-
-    sales = fetch_data('sales')
-    return render_template('admin/manage_sales.html', sales=sales)
-
-
-@app.route('/sales/delete/<int:sale_id>')
-@login_required
-def delete_sale(sale_id):
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM sales WHERE id = %s", (sale_id,))
-    conn.commit()
-    cur.close()
-    conn.close()
-    flash('🗑️ Sale deleted successfully!', 'info')
-    return redirect(url_for('manage_sales'))
-
-
-# ---------- MANAGE STOCK ----------
-@app.route('/stock', methods=['GET', 'POST'])
-@login_required
-def manage_stock():
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    if request.method == 'POST':
-        product_id = request.form['product_id']
-        quantity_added = request.form['quantity_added']
-        insert_stock(product_id, quantity_added)
-        flash('✅ Stock updated successfully!', 'success')
-        return redirect(url_for('manage_stock'))
-
-    stock = fetch_data('stock')
-    return render_template('admin/manage_stock.html', stock=stock)
-
-
-@app.route('/stock/delete/<int:stock_id>')
-@login_required
-def delete_stock(stock_id):
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM stock WHERE id = %s", (stock_id,))
-    conn.commit()
-    cur.close()
-    conn.close()
-    flash('🗑️ Stock record deleted successfully!', 'info')
-    return redirect(url_for('manage_stock'))
-
-
-# ---------- VIEW PROFITS ----------
-@app.route('/profits')
-@login_required
-def view_profits():
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    profits = product_profit()
-    return render_template('view_profits.html', profits=profits)
-
-# ---------- EDIT PRODUCT ----------
-@app.route('/admin/products/edit/<int:product_id>', methods=['POST'])
-@login_required
+@app.route('/edit_product/<int:product_id>', methods=['POST'])
 def edit_product(product_id):
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
     name = request.form['name']
     buying_price = request.form['buying_price']
     selling_price = request.form['selling_price']
-    stock_quantity = request.form['stock_quantity']
+    update_product(product_id, name, buying_price, selling_price)
+    flash("Product updated successfully.", "success")
+    return redirect(url_for('products'))
 
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        UPDATE products 
-        SET name=%s, buying_price=%s, selling_price=%s, stock_quantity=%s 
-        WHERE id=%s
-    """, (name, buying_price, selling_price, stock_quantity, product_id))
-    conn.commit()
-    cur.close()
-    conn.close()
+@app.route('/delete_product/<int:product_id>', methods=['POST'])
+def delete_product(product_id):
+    delete_product_by_id(product_id)
+    flash("Product deleted.", "info")
+    return redirect(url_for('products'))
 
-    flash('Product updated successfully!', 'success')
-    return redirect(url_for('manage_products'))
-
-# ---------- EDIT SALE ----------
-@app.route('/admin/sales/edit/<int:sale_id>', methods=['POST'])
-@login_required
-def edit_sale(sale_id):
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
-
-    product_id = request.form['product_id']
-    quantity = request.form['quantity']
-
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        UPDATE sales 
-        SET product_id=%s, quantity=%s 
-        WHERE id=%s
-    """, (product_id, quantity, sale_id))
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    flash('Sale updated successfully!', 'success')
-    return redirect(url_for('manage_sales'))
-
-# ---------- EDIT STOCK ----------
-@app.route('/admin/stock/edit/<int:stock_id>', methods=['POST'])
-@login_required
+@app.route('/edit_stock/<int:stock_id>', methods=['POST'])
 def edit_stock(stock_id):
-    if current_user.role not in ['admin', 'superadmin']:
-        flash('Access denied: Admins only.', 'danger')
-        return redirect(url_for('dashboard'))
+    quantity = request.form['quantity']
+    update_stock_quantity(stock_id, quantity)
+    flash("Stock updated successfully.", "success")
+    return redirect(url_for('stock'))
 
-    product_id = request.form['product_id']
-    quantity_added = request.form['quantity_added']
+@app.route('/delete_stock/<int:stock_id>', methods=['POST'])
+def delete_stock(stock_id):
+    delete_stock_by_id(stock_id)
+    flash("Stock entry deleted.", "info")
+    return redirect(url_for('stock'))
 
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("""
-        UPDATE stock 
-        SET product_id=%s, quantity_added=%s 
-        WHERE id=%s
-    """, (product_id, quantity_added, stock_id))
-    conn.commit()
-    cur.close()
-    conn.close()
+@app.route('/edit_sale/<int:sale_id>', methods=['POST'])
+def edit_sale(sale_id):
+    quantity = request.form['quantity']
+    update_sale_quantity(sale_id, quantity)
+    flash("Sale updated successfully.", "success")
+    return redirect(url_for('sales'))
 
-    flash('Stock entry updated successfully!', 'success')
-    return redirect(url_for('manage_stock'))
+@app.route('/delete_sale/<int:sale_id>', methods=['POST'])
+def delete_sale(sale_id):
+    delete_sale_by_id(sale_id)
+    flash("Sale entry deleted.", "info")
+    return redirect(url_for('sales'))
+
+@app.context_processor
+def inject_year():
+    return {'current_year': datetime.now().year}
+
+@app.route('/privacy')
+@login_required
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+@login_required
+def terms():
+    return render_template('terms.html')
+
+@app.route('/contact', methods=['GET', 'POST'])
+@login_required
+def contact():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        message = request.form.get('message')
+
+        # Optional: save to database, send email, log message
+        flash("Your message has been sent successfully!", "success")
+        return redirect('/contact')
+
+    return render_template('contact.html')
+
+@app.errorhandler(404)
+def page_not_found(e):
+    missing_url = request.path
+    app.logger.warning(f"404 Not Found: {missing_url}")
+    return render_template("404.html"), 404
+
+@app.errorhandler(429)
+def too_many_attempts(e):
+    return render_template("429.html"), 429
 
 
 #  RUN APP 

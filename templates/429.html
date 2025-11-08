@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Too Many Attempts') }}{% endblock %}
+{% block content %}
+<style>
+  .error-container {
+    text-align: center;
+    padding: 4rem 2rem;
+    animation: fadeBounce 1s ease-out;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .error-code {
+    font-size: 5rem;
+    font-weight: 700;
+    color: #ff6b6b;
+    animation: pulseLock 1.5s infinite;
+  }
+
+  .error-message {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #343a40;
+  }
+
+  .error-description {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-bottom: 2rem;
+  }
+
+  .error-actions a {
+    margin: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-wait {
+    background-color: #ffc107;
+    color: #000;
+  }
+
+  .btn-wait:hover {
+    background-color: #e0a800;
+  }
+
+  .btn-contact {
+    background-color: #2575fc;
+    color: #fff;
+  }
+
+  .btn-contact:hover {
+    background-color: #1a5edc;
+  }
+
+  .mascot-container {
+    position: absolute;
+    top: -40px;
+    right: 5%;
+    animation: floatMascot 4s ease-in-out infinite;
+    z-index: 10;
+    cursor: pointer;
+  }
+
+  @keyframes pulseLock {
+    0%, 100% {
+      text-shadow: 0 0 10px rgba(255, 107, 107, 0.4);
+      transform: scale(1);
+    }
+    50% {
+      text-shadow: 0 0 20px rgba(255, 107, 107, 0.6);
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes floatMascot {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+</style>
+
+<div class="error-container">
+  <!-- 🔒 Mascot -->
+  <div class="mascot-container" id="mascot">
+    <lottie-player
+      id="mascotPlayer"
+      src="https://assets10.lottiefiles.com/packages/lf20_8gdcqhfv.json"
+      background="transparent"
+      speed="1"
+      style="width: 200px; height: 200px;"
+      loop autoplay>
+    </lottie-player>
+  </div>
+
+  <!-- 🔊 Audio -->
+  <audio id="lockSound" src="/static/sounds/lockdown.mp3" preload="auto" muted></audio>
+
+  <div class="error-code">429</div>
+  <div class="error-message">{{ _('Too Many Attempts') }}</div>
+  <div class="error-description">
+    {{ _("You've tried too many times. For your security, access is temporarily locked.") }}<br>
+    {{ _("Please wait a few minutes before trying again.") }}
+  </div>
+  <div class="error-actions">
+    <a href="/" class="btn-wait"><i class="bi bi-clock-history me-1"></i> {{ _('Wait & Retry') }}</a>
+    <a href="/contact" class="btn-contact"><i class="bi bi-envelope-fill me-1"></i> {{ _('Contact Support') }}</a>
+  </div>
+</div>
+
+<!-- 🎬 Lottie Script -->
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+<!-- 🔊 Mascot Interaction -->
+<script>
+  const mascot = document.getElementById('mascot');
+  const lockSound = document.getElementById('lockSound');
+
+  mascot.addEventListener('mouseenter', () => {
+    lockSound.muted = false;
+    lockSound.currentTime = 0;
+    lockSound.play();
+  });
+</script>
+{% endblock %}

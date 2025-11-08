@@ -663,5 +663,59 @@ def update_user_role(user_id, new_role):
     conn.close()
 
 
+def update_product(product_id, name, buying_price, selling_price):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE products
+        SET name = %s,
+            buying_price = %s,
+            selling_price = %s
+        WHERE id = %s;
+    """, (name, buying_price, selling_price, product_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def delete_product_by_id(product_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM products WHERE id = %s;", (product_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def update_stock_quantity(stock_id, quantity):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE stock SET stock_quantity = %s WHERE id = %s;", (quantity, stock_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def delete_stock_by_id(stock_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM stock WHERE id = %s;", (stock_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def update_sale_quantity(sale_id, quantity):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE sales SET quantity = %s WHERE id = %s;", (quantity, sale_id))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def delete_sale_by_id(sale_id):
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM sales WHERE id = %s;", (sale_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    
 if __name__ == "__main__":
     create_tables()

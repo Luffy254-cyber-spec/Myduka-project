@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Page Not Found') }}{% endblock %}
+{% block content %}
+<style>
+  .error-container {
+    text-align: center;
+    padding: 4rem 2rem;
+    animation: fadeBounce 1s ease-out;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .error-code {
+    font-size: 6rem;
+    font-weight: 700;
+    color: #dc6a6a;
+    animation: pulseElectric 1.5s infinite;
+    position: relative;
+    z-index: 2;
+  }
+
+  .error-message {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #343a40;
+  }
+
+  .error-description {
+    font-size: 1rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+
+  .countdown-text {
+    font-size: 1rem;
+    color: #dc6a6a;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .cancel-redirect {
+    margin-bottom: 2rem;
+  }
+
+  .error-actions a,
+  .error-actions button {
+    margin: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    font-weight: 500;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+  }
+
+  .btn-home {
+    background-color: #2575fc;
+    color: #fff;
+  }
+
+  .btn-home:hover {
+    background-color: #1a5edc;
+  }
+
+  .btn-contact {
+    background-color: #ffc107;
+    color: #000;
+  }
+
+  .btn-contact:hover {
+    background-color: #e0a800;
+  }
+
+  #cancelRedirectBtn:hover,
+  #goBackBtn:hover,
+  #retryBtn:hover {
+    transform: scale(1.05);
+  }
+
+  .mascot-container {
+    position: absolute;
+    top: -40px;
+    right: 5%;
+    animation: floatMascot 4s ease-in-out infinite;
+    z-index: 10;
+    cursor: pointer;
+  }
+
+  @keyframes fadeBounce {
+    0% { opacity: 0; transform: translateY(-30px); }
+    60% { opacity: 1; transform: translateY(10px); }
+    100% { transform: translateY(0); }
+  }
+
+  @keyframes floatMascot {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+
+  @keyframes pulseElectric {
+    0% {
+      text-shadow: 0 0 10px rgba(220, 106, 106, 0.4),
+                   0 0 20px rgba(255, 0, 0, 0.2),
+                   0 0 30px rgba(255, 255, 0, 0.1);
+      transform: scale(1);
+    }
+    50% {
+      text-shadow: 0 0 20px rgba(255, 255, 0, 0.6),
+                   0 0 30px rgba(255, 0, 0, 0.4),
+                   0 0 40px rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+    100% {
+      text-shadow: 0 0 10px rgba(220, 106, 106, 0.4),
+                   0 0 20px rgba(255, 0, 0, 0.2),
+                   0 0 30px rgba(255, 255, 0, 0.1);
+      transform: scale(1);
+    }
+  }
+
+  .spark {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle, #ffeb3b 0%, #dc6a6a 100%);
+    border-radius: 50%;
+    animation: fallSpark 2s linear infinite;
+    z-index: 1;
+  }
+
+  @keyframes fallSpark {
+    0% { top: -10px; opacity: 1; transform: translateX(0); }
+    100% { top: 100%; opacity: 0; transform: translateX(20px); }
+  }
+
+  .spinner-border {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    vertical-align: text-bottom;
+    border: 0.15em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite, pulseColor 1.2s ease-in-out infinite;
+  }
+
+  @keyframes spinner-border {
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes pulseColor {
+    0%, 100% { border-color: #2575fc transparent #2575fc transparent; }
+    50% { border-color: #ffeb3b transparent #dc6a6a transparent; }
+  }
+
+  .toast-message {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #343a40;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    z-index: 999;
+  }
+
+  .toast-message.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<div class="error-container">
+  <!-- ⚡ Sparks -->
+  <div class="spark" style="left: 45%; animation-delay: 0s;"></div>
+  <div class="spark" style="left: 50%; animation-delay: 0.5s;"></div>
+  <div class="spark" style="left: 55%; animation-delay: 1s;"></div>
+  <div class="spark" style="left: 48%; animation-delay: 1.5s;"></div>
+
+  <!-- 🐣 Animated Mascot -->
+  <div class="mascot-container" id="mascot">
+    <lottie-player
+      id="mascotPlayer"
+      background="transparent"
+      speed="1"
+      style="width: 200px; height: 200px;"
+      loop autoplay>
+    </lottie-player>
+  </div>
+
+  <!-- 🔊 Audio Effects -->
+  <audio id="errorChime" src="/static/sounds/error-pop.mp3" preload="auto" muted></audio>
+  <audio id="voiceover" src="/static/sounds/404-voice.mp3" preload="auto" muted></audio>
+
+  <div class="error-code">404</div>
+  <div class="error-message">{{ _('Oops! Page Not Found') }}</div>
+  <div class="error-description">
+    {{ _("The page you're looking for doesn't exist or has been moved.") }}<br>
+    {{ _("Please check the URL or return to a safe place.") }}
+  </div>
+  <div class="countdown-text">
+    {{ _("Redirecting to dashboard in") }} <span id="countdown">10</span> {{ _("seconds...") }}
+  </div>
+  <div class="cancel-redirect">
+    <button id="cancelRedirectBtn" class="btn btn-outline-danger">
+      {{ _('Cancel Redirect') }}
+    </button>
+  </div>
+  <div class="error-actions">
+    <a href="/" class="btn-home"><i class="bi bi-house-door-fill me-1"></i> {{ _('Go to Dashboard') }}</a>
+    <a href="/contact" class="btn-contact"><i class="bi bi-envelope-fill me-1"></i> {{ _('Contact Support') }}</a>
+    <button id="goBackBtn" class="btn btn-outline-secondary"><i class="bi bi-arrow-left-circle me-1"></i> {{ _('Go Back') }}</button>
+    <button id="retryBtn" class="btn btn-outline-primary">
+      <span class="spinner-border d-none pulse" role="status" aria-hidden="true" id="retrySpinner"></span>
+      <span id="retryText"><i class="bi bi-arrow-repeat me-1"></i> {{ _('Retry') }}</span>
+    </button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast-message">
+  {{ _('Redirect cancelled. You’ll stay on this page.') }}
+</div>
+
+<!-- 🎬 Lottie Player Script -->
+<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
+<!-- 🔁 Countdown + Controls -->
+<script>
+  const mascot = document.getElementById('mascot');
+  const mascotPlayer = document.getElementById('mascotPlayer');
+  const errorChime = document.getElementById('errorChime');
+  const voiceover = document.getElementById('voiceover');
+  const countdown = document.getElementById('countdown');
+  const cancelBtn = document.getElementById('cancelRedirectBtn');
+  const toast = document.getElementById('toast');
+  const goBackBtn = document.getElementById('goBackBtn');
+  const retryBtn = document.getElementById('retryBtn');
+  const retrySpinner = document.getElementById('retrySpinner');
+  const retryText = document.getElementById('retryText');
+
+  // Mascot animation switch
+  const errorCode = 404;
+  const mascotAnimations = {
+    404: "https://assets10.lottiefiles.com/packages/lf20_qp1q7mct.json",
+    500: "https://assets2.lottiefiles.com/packages/lf20_3rwasyjy.json"
+  };
+  mascotPlayer.setAttribute("src", mascotAnimations[errorCode] || mascotAnimations[404]);
+
+  // Sound interactions
+  mascot.addEventListener('mouseenter', () => {
+    errorChime.muted = false;
+    errorChime.currentTime = 0;
+    errorChime.play();
+  });
+
+  mascot.addEventListener('click', () => {
+    voiceover.muted = false;
+    voiceover.currentTime = 0;
+    voiceover.play();
+  });
+
+  // Countdown + cancel logic
+  let seconds = 10;
+  let redirectCancelled = false;
+
+  const timer = setInterval(() => {
+    if (redirectCancelled) return;
+    seconds--;
+    countdown.textContent = seconds;
+    if (seconds <= 0) {
+      clearInterval(timer);
+      window.location.href = "/";
+    }
+  }, 1000);
+
+  cancelBtn.addEventListener('click', () => {
+    if (redirectCancelled) return;
+    redirectCancelled = true;
+    clearInterval(timer);
+    cancelBtn.textContent = "{{ _('Redirect Cancelled') }}";
+    cancelBtn.disabled = true;
+    cancelBtn.classList.remove("btn-outline-danger");
+    cancelBtn.classList.add("btn-secondary");
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 4000);
+  });
+
+  // Go Back
+  goBackBtn.addEventListener('click', () => {
+    window.history.back();
+  });
+
+  // Retry with spinner
+  retryBtn.addEventListener('click', () => {
+    retryBtn.disabled = true;
+    retrySpinner.classList.remove('d-none');
+    retryText.textContent = "{{ _('Retrying...') }}";
+    setTimeout(() => {
+      location.reload();
+    }, 1000);
+  });
+</script>
+{% endblock %}
+ 
