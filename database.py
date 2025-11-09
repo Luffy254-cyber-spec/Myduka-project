@@ -63,6 +63,14 @@ def insert_product(p_values):
     curr.close()
     conn.close()
 
+def product_exists(name):
+    conn = get_connection()
+    curr = conn.cursor()
+    curr.execute("SELECT 1 FROM products WHERE LOWER(name) = %s LIMIT 1", (name.lower(),))
+    exists = curr.fetchone() is not None
+    curr.close()
+    conn.close()
+    return exists
 
 def insert_sales(values):
     conn = get_connection()
@@ -796,6 +804,80 @@ def quick_unlock(email):
     cur.execute("DELETE FROM lockout_requests WHERE email = %s", (email,))
     get_db().commit()
 
-    
+def get_notifications(user_id, role=None):
+    cur = get_cursor()
+    if role in ["admin", "superadmin"]:
+        cur.execute("""
+    SELECT n.*, u.full_name AS sender_name
+    FROM notifications n
+    LEFT JOIN users u ON n.sender_id = u.id
+    WHERE n.role IN ('admin', 'superadmin') OR n.user_id = %s
+    ORDER BY n.created_at DESC
+""", (user_id,))
+    else:
+       cur.execute("""
+    SELECT n.*, u.full_name AS sender_name
+    FROM notifications n
+    LEFT JOIN users u ON n.sender_id = u.id
+    WHERE n.role IN ('admin', 'superadmin') OR n.user_id = %s
+    ORDER BY n.created_at DESC
+""", (user_id,))
+    return cur.fetchall()
+
+
+
+def broadcast_notification_to_all(title, message, sender_id):
+    cur = get_cursor()
+    cur.execute("""
+        INSERT INTO notifications (user_id, sender_id, title, message, is_read, role, created_at)
+        SELECT id, %s, %s, %s, FALSE, role, CURRENT_TIMESTAMP FROM users
+    """, (sender_id, title, message))
+    get_db().commit()
+
+
+
+# ---------- NOTIFICATIONS HELPERS ----------
+
+def mark_notifications_as_read(user_id, role=None):
+    cur = get_cursor()
+    if role in ["admin", "superadmin"]:
+        cur.execute("""
+            UPDATE notifications
+            SET is_read = TRUE
+            WHERE user_id = %s OR role IN ('admin', 'superadmin')
+        """, (user_id,))
+    else:
+        cur.execute("""
+            UPDATE notifications
+            SET is_read = TRUE
+            WHERE user_id = %s
+        """, (user_id,))
+    get_db().commit()
+
+
+def clear_read_notifications_for_user(user_id, role=None):
+    conn = get_db()
+    cur = conn.cursor()
+    if role in ("admin", "superadmin"):
+        cur.execute("""
+            DELETE FROM notifications
+            WHERE is_read = TRUE
+              AND (user_id = %s OR role IN ('admin', 'superadmin'))
+            RETURNING id;
+        """, (user_id,))
+    else:
+        cur.execute("""
+            DELETE FROM notifications
+            WHERE is_read = TRUE
+              AND user_id = %s
+            RETURNING id;
+        """, (user_id,))
+
+    deleted_rows = cur.fetchall()
+    conn.commit()
+    print(f"[DEBUG] Deleted {len(deleted_rows)} read notifications for user_id={user_id}, role={role}")
+
+
+
 if __name__ == "__main__":
     create_tables()

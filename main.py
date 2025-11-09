@@ -3,7 +3,7 @@ from functools import wraps
 import random
 from flask import Flask, abort, flash, render_template, request, redirect, session, url_for
 from flask_mail import Message, Mail
-from database import calculate_total_loss, calculate_total_profit, calculate_total_sales, calculate_total_stock, count_pending_lockouts, count_products, count_rejected_lockouts, count_sales_entries, create_user, daily_profit, daily_sales, delete_product_by_id, delete_sale_by_id, delete_stock_by_id, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_all_users, get_audit_logs, get_connection, get_lockout_request_by_id, get_pending_lockout_requests, get_recent_sales, get_rejected_lockout_requests, get_revenue_timeseries, get_system_stats, get_top_products, get_top_products_by_revenue, get_user_by_email, get_violation_logs, insert_product, insert_sales, insert_stock, log_action, log_otp_attempt, product_profit, product_sales, quick_unlock, reject_lockout_request, restore_lockout_request, save_otp, search_everything, update_password, update_product, update_sale_quantity, update_stock_quantity, update_user_role, verify_otp
+from database import broadcast_notification_to_all, calculate_total_loss, calculate_total_profit, calculate_total_sales, calculate_total_stock,  clear_read_notifications_for_user, count_pending_lockouts, count_products, count_rejected_lockouts, count_sales_entries, create_user, daily_profit, daily_sales, delete_product_by_id, delete_sale_by_id, delete_stock_by_id, fetch_data, fetch_otp_logs, fetch_products_for_dropdown, fetch_user_by_id, get_all_users, get_audit_logs, get_connection, get_cursor, get_lockout_request_by_id, get_notifications, get_pending_lockout_requests, get_recent_sales, get_rejected_lockout_requests, get_revenue_timeseries, get_system_stats, get_top_products, get_top_products_by_revenue, get_user_by_email, get_violation_logs, insert_product, insert_sales, insert_stock, log_action, log_otp_attempt, mark_notifications_as_read, product_exists, product_profit, product_sales, quick_unlock, reject_lockout_request, restore_lockout_request, save_otp, search_everything, update_password, update_product, update_sale_quantity, update_stock_quantity, update_user_role, verify_otp
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import LoginManager, current_user, login_required
 from flask_login import UserMixin
@@ -160,11 +160,18 @@ def stock():
 # FORM HANDLERS 
 @app.route('/add_product', methods=['POST'])
 def add_product():
-    name = request.form['name']
+    name = request.form['name'].strip().lower()
     buying_price = request.form['buying_price']
     selling_price = request.form['selling_price']
+
+    if product_exists(name):
+        flash("Product already exists. Please insert stock or make a sale.", "warning")
+        return redirect(url_for('products'))
+
     insert_product((name, buying_price, selling_price))
+    flash("Product added successfully.", "success")
     return redirect(url_for('products'))
+
 
 
 @app.route('/add_sale', methods=['POST'])
@@ -467,13 +474,17 @@ def admin_dashboard():
     violations = get_violation_logs()
     pending_count = count_pending_lockouts()
     rejected_count = count_rejected_lockouts()
+    notifications = get_notifications(current_user.id, current_user.role)
+    notification_count = len(notifications)
 
     return render_template(
         "admin_dashboard.html",
         users=users,
         violations=violations,
         pending_count=pending_count,
-        rejected_count=rejected_count
+        rejected_count=rejected_count,
+        notifications=notifications,
+        notification_count=notification_count
     )
 
 # ---------- SUPERADMIN ----------
@@ -792,6 +803,65 @@ def quick_unlock_user(email):
 
     flash(f"{email} has been unlocked.", "success")
     return redirect(url_for('lockout_requests'))
+
+@app.route("/notifications")
+@login_required
+def notifications():
+    # Role-aware filtering
+    user_notifications = get_notifications(current_user.id, current_user.role)
+    notification_count = len(user_notifications)
+
+    # Optional: mark recent notifications as viewed
+    # mark_notifications_as_read(current_user.id)
+
+    if notification_count == 0:
+        return render_template("no_notifications.html")
+
+    return render_template(
+        "notifications.html",
+        notifications=user_notifications,
+        notification_count=notification_count
+    )
+
+@app.context_processor
+def inject_notification_count():
+    if current_user.is_authenticated:
+        count = len(get_notifications(current_user.id, current_user.role))
+        return dict(notification_count=count)
+    return dict(notification_count=0)
+
+
+@app.route("/notifications/broadcast", methods=["POST"])
+@admin_required
+def broadcast_notification():
+    title = request.form["title"]
+    message = request.form["message"]
+    broadcast_notification_to_all(title, message, current_user.id)
+    flash("Broadcast sent to all users!", "success")
+    return redirect(url_for("admin_dashboard"))
+
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop("db", None)
+    if db is not None:
+        db.close()
+
+# ---------- ROUTES ----------
+
+@app.route("/notifications/mark-all-read", methods=["POST"])
+@login_required
+def mark_all_notifications_read():
+    mark_notifications_as_read(current_user.id, current_user.role)
+    flash("All notifications marked as read.", "info")
+    return redirect(url_for("notifications"))
+
+
+@app.route("/notifications/clear-read", methods=["POST"])
+@login_required
+def clear_read_notifications():
+    clear_read_notifications_for_user(current_user.id, current_user.role)
+    flash("Read notifications cleared.", "info")
+    return redirect(url_for("notifications"))
 
 #  RUN APP 
 if __name__ == '__main__':

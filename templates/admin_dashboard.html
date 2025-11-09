@@ -27,8 +27,7 @@
   </div>
 
   <div class="row g-4 mt-2">
-
-    <!-- 👥 Users Section -->
+    <!-- 👥 Registered Users -->
     <div class="col-md-6">
       <div class="card shadow-sm border-0">
         <div class="card-body">
@@ -87,8 +86,61 @@
         </div>
       </div>
     </div>
-
   </div>
+
+  <!-- 🔔 Notifications Panel -->
+  {% if notifications %}
+<div class="card shadow-sm border-0 mt-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="card-title mb-0">🔔 Recent Notifications</h4>
+      <div class="d-flex gap-2">
+        <form method="POST" action="{{ url_for('mark_all_notifications_read') }}">
+          <button type="submit" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-check2-all me-1"></i> Mark all as read
+          </button>
+        </form>
+        <form method="POST" action="{{ url_for('clear_read_notifications') }}">
+          <button type="submit" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-trash3 me-1"></i> Clear Read
+          </button>
+        </form>
+      </div>
+    </div>
+    <ul class="list-group list-group-flush">
+      {% for note in notifications %}
+      <li class="list-group-item">
+        <div>
+          <strong>{{ note.title }}</strong><br>
+          <small class="text-muted">{{ note.message }}</small><br>
+          <small class="text-muted">Sent by {{ note.sender_name or 'System' }} at {{ note.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endif %}
+
+  <!-- 📢 Broadcast Notification -->
+  {% if current_user.role in ['admin', 'superadmin'] %}
+  <div class="card shadow-sm border-0 mt-4">
+    <div class="card-body">
+      <h4 class="card-title mb-3">📢 Broadcast Notification</h4>
+      <form method="POST" action="{{ url_for('broadcast_notification') }}">
+        <div class="mb-2">
+          <input type="text" name="title" class="form-control" placeholder="Notification title" required>
+        </div>
+        <div class="mb-2">
+          <textarea name="message" class="form-control" placeholder="Message to all users" rows="3" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-megaphone-fill me-1"></i> Send Broadcast
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- 💼 Business Management -->
   <div class="card shadow-sm border-0 mt-4">
