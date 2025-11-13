@@ -936,3 +936,17 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+.navbar-brand img {
+  height: 40px;
+  width: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.navbar-brand img {
+  transition: transform 0.3s ease;
+}
+
+.navbar-brand:hover img {
+  transform: scale(1.1);
+}

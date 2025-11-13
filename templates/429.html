@@ -6,6 +6,7 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    background-color: #f8f9fa;
   }
 
   .error-container {
@@ -119,11 +120,12 @@
     {{ _("Please wait a few moments before trying again.") }}
   </div>
   <div class="countdown-text">
-    {{ _("Redirecting to login in") }} <span id="countdown">30</span> {{ _("seconds...") }}
-  </div>
+  {{ _("Redirecting to the login page in") }} <span id="countdown">30</span> {{ _("seconds...") }}
+</div>
+
   <div class="error-actions">
     <a href="/" class="btn-wait"><i class="bi bi-clock-history me-1"></i> {{ _('Wait & Retry') }}</a>
-    <a href="/contact" class="btn-contact"><i class="bi bi-envelope-fill me-1"></i> {{ _('Contact Support') }}</a>
+    <a href="mailto:marcellinostephen052@gmail.com" class="btn-contact"><i class="bi bi-envelope-fill me-1"></i> {{ _('Contact Support') }}</a>
   </div>
 </div>
 
@@ -132,24 +134,38 @@
 
 <!-- 🔊 Mascot Interaction + Countdown -->
 <script>
-  const mascot = document.getElementById('mascot');
-  const lockSound = document.getElementById('lockSound');
-  const countdown = document.getElementById('countdown');
+  document.addEventListener("DOMContentLoaded", () => {
+    const mascot = document.getElementById('mascot');
+    const lockSound = document.getElementById('lockSound');
+    const countdown = document.getElementById('countdown');
+    let seconds = 30;
 
-  mascot.addEventListener('mouseenter', () => {
-    lockSound.muted = false;
-    lockSound.currentTime = 0;
-    lockSound.play();
+    // Play sound on mascot hover
+    mascot.addEventListener('mouseenter', () => {
+      try {
+        lockSound.muted = false;
+        lockSound.currentTime = 0;
+        lockSound.play().catch(() => {});
+      } catch (err) {
+        console.error("Audio playback failed:", err);
+      }
+    });
+
+    // Countdown + redirect logic
+    const timer = setInterval(() => {
+      seconds--;
+      countdown.textContent = seconds;
+
+      if (seconds <= 0) {
+        clearInterval(timer);
+        // Smooth fade-out before redirect
+        document.body.style.transition = "opacity 0.8s";
+        document.body.style.opacity = "0";
+        setTimeout(() => {
+          window.location.href = "{{ url_for('login') }}";
+        }, 800);
+      }
+    }, 1000);
   });
-
-  let seconds = 30;
-  const timer = setInterval(() => {
-    seconds--;
-    countdown.textContent = seconds;
-    if (seconds <= 0) {
-      clearInterval(timer);
-      window.location.href = "/login";
-    }
-  }, 1000);
 </script>
 {% endblock %}

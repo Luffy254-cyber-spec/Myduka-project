@@ -87,9 +87,11 @@
   <!-- 🌐 Navbar -->
   <nav class="navbar navbar-expand-lg mb-4 shadow-sm">
     <div class="container-fluid">
-      <a class="navbar-brand fw-bold" href="/">
-        <i class="bi bi-shop me-2"></i> MyDuka
+      <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MyDuka Logo">
+        <span class="ms-2">MyDuka</span>
       </a>
+
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -232,7 +234,9 @@
 
   <!-- 🧱 Main Content -->
   <div class="container">
-    {% block content %}{% endblock %}
+    {% block content %}
+
+    {% endblock %}
   </div>
 
   <!-- JS Scripts -->

@@ -1,28 +1,47 @@
 {% extends "base.html" %}
+{% block title %}Audit Logs{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
   <h2 class="text-danger text-center mb-4">
-    <i class="bi bi-journal-check me-2"></i>Audit Logs
+    <i class="bi bi-journal-check me-2"></i> Audit Logs
   </h2>
 
-  <table class="table table-bordered table-striped">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <table class="table table-bordered table-striped table-hover">
     <thead class="table-dark">
       <tr>
         <th>ID</th>
-        <th>User</th>
+        <th>Actor Email</th>
         <th>Action</th>
+        <th>Context</th>
         <th>Details</th>
-        <th>Date</th>
+        <th>Timestamp</th>
       </tr>
     </thead>
     <tbody>
       {% for log in logs %}
       <tr>
-        <td>{{ log[0] }}</td>
-        <td>{{ log[1] }}</td>
-        <td>{{ log[2] }}</td>
-        <td>{{ log[3] }}</td>
-        <td>{{ log[4] }}</td>
+        <td>{{ log.id }}</td>
+        <td>{{ log.actor_email or '—' }}</td>
+        <td>{{ log.action or '—' }}</td>
+        <td>{{ log.context or '—' }}</td>
+        <td>{{ log.details or '—' }}</td>
+        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') if log.timestamp else '—' }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="6" class="text-center text-muted">No audit logs available.</td>
       </tr>
       {% endfor %}
     </tbody>

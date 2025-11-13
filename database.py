@@ -473,12 +473,14 @@ def update_user_role(user_id, new_role):
 def get_audit_logs(limit=50):
     with get_connection() as conn, conn.cursor() as cur:
         cur.execute("""
-            SELECT actor, action, timestamp
+            SELECT id, actor_email, action, context, details, timestamp
             FROM audit_logs
+            WHERE actor_email IS NOT NULL
             ORDER BY timestamp DESC
             LIMIT %s;
         """, (limit,))
-        return cur.fetchall()
+        rows = cur.fetchall()
+        return rows
 
 def log_audit(actor, action):
     with get_connection() as conn, conn.cursor() as cur:

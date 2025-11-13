@@ -12,7 +12,7 @@ from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms import StringField, TextAreaField, SubmitField
 from wtforms.validators import DataRequired, Email
-from flask_babel import Babel, gettext
+from flask_babel import Babel
 import time
 from flask import session
 import time
@@ -557,7 +557,6 @@ def violation_logs():
 @app.route('/audit_logs')
 @login_required
 def audit_logs():
-    # Allow both Admin and Super Admin
     if current_user.role not in ['admin', 'superadmin']:
         flash('Access denied: Admins only.', 'danger')
         return redirect(url_for('dashboard'))
